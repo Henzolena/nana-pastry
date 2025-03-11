@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Search, Filter, ChevronDown, X } from 'lucide-react';
+import { Search, Filter, ChevronDown, X, SlidersHorizontal } from 'lucide-react';
 
 import { cakes } from '@/utils/data';
 import { Cake, CakeCategory } from '@/types';
+import CakeDetailsModal from '@/components/CakeDetailsModal';
 
 // Animation variants
 const fadeIn = {
@@ -44,6 +45,10 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   
+  // Add state for modal
+  const [selectedCake, setSelectedCake] = useState<null | Cake>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   // Set up intersection observer hooks for animation
   const [headerRef, headerInView] = useInView({ triggerOnce: true, threshold: 0.1 });
   const [cakesRef, cakesInView] = useInView({ triggerOnce: true, threshold: 0.1 });
@@ -61,8 +66,21 @@ const Products = () => {
     return matchesCategory && matchesSearch;
   });
 
+  // Add a handler to open modal with cake details
+  const handleOpenCakeDetails = (cake: Cake) => {
+    setSelectedCake(cake);
+    setIsModalOpen(true);
+  };
+
   return (
-    <>
+    <div className="pt-16">
+      {/* Add Modal */}
+      <CakeDetailsModal 
+        cake={selectedCake}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+
       {/* Header */}
       <motion.section
         ref={headerRef}
@@ -217,7 +235,7 @@ const Products = () => {
                           <span className="text-xs uppercase tracking-wider bg-hotpink px-2 py-0.5 rounded-full">
                             {cake.category}
                           </span>
-                          <p className="mt-2 line-clamp-2 text-sm md:text-base">
+                          <p className="mt-2 line-clamp-2 text-sm md:text-base text-white">
                             {cake.description}
                           </p>
                         </div>
@@ -230,6 +248,7 @@ const Products = () => {
                       <div className="flex justify-between items-center mt-2">
                         <span className="font-heading text-rosepink text-lg">${cake.price.toFixed(2)}</span>
                         <button 
+                          onClick={() => handleOpenCakeDetails(cake)}
                           className="text-sm font-medium text-deepbrown hover:text-hotpink transition-colors duration-200 bg-white/70 hover:bg-white px-3 py-1 rounded-full"
                         >
                           View Details
@@ -301,7 +320,7 @@ const Products = () => {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 };
 

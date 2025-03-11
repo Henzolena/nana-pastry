@@ -5,6 +5,8 @@ import { useInView } from 'react-intersection-observer';
 import { Heart, Star, Clock, Award, Phone } from 'lucide-react';
 
 import { cakes, testimonials } from '@/utils/data';
+import { Cake, TestimonialType } from '@/types';
+import CakeDetailsModal from '@/components/CakeDetailsModal';
 
 // Animation variants
 const fadeIn = {
@@ -40,6 +42,10 @@ const Home = () => {
   const [testimonialRef, testimonialInView] = useInView({ triggerOnce: true, threshold: 0.1 });
   const [ctaRef, ctaInView] = useInView({ triggerOnce: true, threshold: 0.1 });
 
+  // Add state for modal
+  const [selectedCake, setSelectedCake] = useState<null | Cake>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Auto-rotate testimonials
   useEffect(() => {
     const interval = setInterval(() => {
@@ -49,8 +55,21 @@ const Home = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Add a handler to open modal with cake details
+  const handleOpenCakeDetails = (cake: Cake) => {
+    setSelectedCake(cake);
+    setIsModalOpen(true);
+  };
+
   return (
-    <>
+    <div className="pt-16">
+      {/* Add Modal */}
+      <CakeDetailsModal 
+        cake={selectedCake}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+
       {/* Hero Section */}
       <motion.section 
         ref={heroRef}
@@ -157,12 +176,16 @@ const Home = () => {
                   <p className="text-warmgray-600 text-sm line-clamp-2 mt-1 mb-2">{cake.description}</p>
                   <div className="flex justify-between items-center">
                     <span className="font-heading text-rosepink text-lg">${cake.price.toFixed(2)}</span>
-                    <Link 
-                      to={`/products/${cake.id}`}
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleOpenCakeDetails(cake);
+                      }}
                       className="text-sm font-medium text-deepbrown hover:text-hotpink transition-colors duration-200"
                     >
                       View Details
-                    </Link>
+                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -407,7 +430,7 @@ const Home = () => {
           </div>
         </div>
       </motion.section>
-    </>
+    </div>
   );
 };
 
