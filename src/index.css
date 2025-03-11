@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 20 33% 98%;
+    --foreground: 300 7% 8%;
+    
+    --primary: 350 100% 87%;
+    --primary-foreground: 300 7% 8%;
+    
+    --secondary: 330 90% 70%;
+    --secondary-foreground: 300 7% 8%;
+    
+    --accent: 45 100% 50%;
+    --accent-foreground: 20 10% 10%;
+    
+    --muted: 20 10% 96%;
+    --muted-foreground: 20 10% 40%;
+    
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 20 0% 100%;
+    
+    --border: 20 10% 90%;
+    --input: 20 10% 90%;
+    --ring: 350 100% 87%;
+    
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    /* Remove the border-border class that doesn't exist */
+  }
+  body {
+    @apply bg-ivory text-deepbrown font-body;
+    background-image: linear-gradient(to bottom, rgba(255, 230, 240, 0.2), rgba(255, 250, 250, 0.4));
+    background-attachment: fixed;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading text-deepbrown;
+  }
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl mb-6 font-bold;
+  }
+  h2 {
+    @apply text-3xl md:text-4xl mb-4 font-semibold;
+  }
+  h3 {
+    @apply text-2xl md:text-3xl mb-4 font-semibold;
+  }
+  p {
+    @apply leading-7 text-warmgray-700 mb-4;
+  }
+}
+
+@layer components {
+  .container {
+    @apply px-4 mx-auto max-w-7xl;
+  }
+  
+  .btn {
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-base font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  
+  .btn-primary {
+    @apply bg-hotpink text-white hover:bg-rosepink shadow-soft-pink hover:shadow-hover-glow;
+  }
+  
+  .btn-secondary {
+    @apply bg-ivory text-deepbrown border border-softgold hover:bg-softgold/10 shadow-soft-gold;
+  }
+  
+  .card {
+    @apply bg-white/90 rounded-lg overflow-hidden shadow-soft-pink border-thin border-blush/40;
+  }
+  
+  .nav-link {
+    @apply relative px-3 py-2 text-warmgray-800 hover:text-hotpink transition-colors duration-200;
+  }
+  
+  .nav-link::after {
+    @apply content-[''] absolute bottom-0 left-0 w-0 h-0.5 bg-softgold transition-all duration-300;
+  }
+  
+  .nav-link:hover::after {
+    @apply w-full;
+  }
+  
+  .section {
+    @apply py-16 md:py-24;
+  }
+  
+  .title-accent {
+    @apply font-script text-rosepink text-xl md:text-2xl mb-2;
+  }
+  
+  .cake-card {
+    @apply rounded-xl overflow-hidden transition-all duration-300 hover:shadow-soft-pink;
+  }
+  
+  .cake-card-image {
+    @apply aspect-square object-cover transition-transform duration-500 hover:scale-105;
+  }
+  
+  .cake-card-content {
+    @apply p-4 bg-gradient-to-b from-white/80 to-pinklight/40 border-t border-t-softgold/20;
+  }
+  
+  /* Glass effect */
+  .glass {
+    @apply bg-white/40 backdrop-blur-md border border-white/20 shadow-glass;
+  }
+  
+  /* Gold shimmer effect */
+  .gold-shimmer {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 248, 220, 0.2), rgba(255, 215, 0, 0.1));
+    background-size: 200% 200%;
+    animation: shimmer 3s infinite linear;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: 0% 0%; }
+    50% { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+  }
+} 
