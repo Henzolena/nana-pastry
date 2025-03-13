@@ -58,7 +58,7 @@ const RequestCustomDesign = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
     const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-    const { register, handleSubmit, formState: { errors }, reset, watch } = useForm<FormInputs>();
+    const { register, handleSubmit, formState: { errors }, reset } = useForm<FormInputs>();
     // Set up intersection observer hooks for animations
     const [headerRef, headerInView] = useInView({ triggerOnce: true, threshold: 0.1 });
     const [formRef, formInView] = useInView({ triggerOnce: true, threshold: 0.1 });
@@ -77,7 +77,7 @@ const RequestCustomDesign = () => {
         }
     };
     const removeFile = (indexToRemove: number) => {
-        setUploadedFiles(prev => prev.filter((file, index) => index !== indexToRemove));
+        setUploadedFiles(prev => prev.filter((_, index) => index !== indexToRemove));
     };
     const onSubmit: SubmitHandler<FormInputs> = (data) => {
         // Set loading state
