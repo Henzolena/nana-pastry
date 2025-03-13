@@ -75,6 +75,14 @@ const Navbar = () => {
           >
             Contact
           </NavLink>
+          <NavLink 
+            to="/request-custom-design" 
+            className={({ isActive }) => 
+              `nav-link ${isActive ? 'text-hotpink after:w-full' : ''}`
+            }
+          >
+            Custom Order
+          </NavLink>
           
           <a 
             href="tel:+1234567890" 
@@ -134,6 +142,15 @@ const Navbar = () => {
               onClick={() => setIsOpen(false)}
             >
               Contact
+            </NavLink>
+            <NavLink 
+              to="/request-custom-design" 
+              className={({ isActive }) => 
+                `text-lg py-2 ${isActive ? 'text-hotpink font-medium' : 'text-deepbrown'}`
+              }
+              onClick={() => setIsOpen(false)}
+            >
+              Custom Order
             </NavLink>
             
             <a 

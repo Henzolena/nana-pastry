@@ -5,7 +5,7 @@ import { useInView } from 'react-intersection-observer';
 import { Heart, Star, Clock, Award, Phone } from 'lucide-react';
 
 import { cakes, testimonials } from '@/utils/data';
-import { Cake, TestimonialType } from '@/types';
+import { Cake } from '@/types';
 import CakeDetailsModal from '@/components/CakeDetailsModal';
 
 // Animation variants
@@ -117,7 +117,11 @@ const Home = () => {
                 Explore Our Cakes
               </Link>
               
-              <a href="tel:+1234567890" className="btn btn-secondary group">
+              <Link to="/request-custom-design" className="btn btn-secondary">
+                Custom Order
+              </Link>
+              
+              <a href="tel:+1234567890" className="btn btn-outline group">
                 <Phone className="w-4 h-4 mr-2 group-hover:animate-pulse" />
                 Call to Order
               </a>
@@ -283,7 +287,16 @@ const Home = () => {
                 <Award className="w-8 h-8 text-hotpink" />
               </div>
               <h3 className="text-xl font-heading text-deepbrown mb-2">Custom Designs</h3>
-              <p className="text-warmgray-600">Personalized cake designs to match your vision and celebration.</p>
+              <p className="text-warmgray-600 mb-3">Personalized cake designs to match your vision and celebration.</p>
+              <Link 
+                to="/request-custom-design" 
+                className="text-sm font-medium text-hotpink hover:text-deepbrown transition-colors duration-200 inline-flex items-center"
+              >
+                Request Custom Design
+                <svg className="w-3 h-3 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Link>
             </motion.div>
           </motion.div>
         </div>
@@ -423,7 +436,11 @@ const Home = () => {
                 Call to Order: (123) 456-7890
               </a>
               
-              <Link to="/contact" className="btn btn-secondary">
+              <Link to="/request-custom-design" className="btn btn-secondary">
+                Custom Cake Design
+              </Link>
+              
+              <Link to="/contact" className="btn btn-outline">
                 Contact Us
               </Link>
             </motion.div>

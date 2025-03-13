@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Search, Filter, ChevronDown, X, SlidersHorizontal } from 'lucide-react';
+import { Search, Filter, ChevronDown, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 import { cakes } from '@/utils/data';
 import { Cake, CakeCategory } from '@/types';
@@ -211,13 +212,37 @@ const Products = () => {
         className="section bg-pink-gradient"
       >
         <div className="container">
+          {selectedCategory === 'custom' && (
+            <motion.div 
+              variants={fadeIn}
+              className="bg-white/90 rounded-xl p-6 mb-8 border border-blush/30 shadow-soft-pink"
+            >
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="bg-blush/30 p-4 rounded-full">
+                  <svg className="w-10 h-10 text-hotpink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <h3 className="text-xl font-heading text-deepbrown mb-2">Looking for a Custom Design?</h3>
+                  <p className="text-warmgray-700">
+                    Our talented pastry chefs can create a customized cake to perfectly match your vision and occasion.
+                  </p>
+                </div>
+                <Link to="/request-custom-design" className="btn btn-primary whitespace-nowrap">
+                  Start My Design
+                </Link>
+              </div>
+            </motion.div>
+          )}
+          
           {filteredCakes.length > 0 ? (
             <>
               <motion.div 
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                 variants={staggerContainer}
               >
-                {filteredCakes.map((cake, index) => (
+                {filteredCakes.map((cake) => (
                   <motion.div 
                     key={cake.id}
                     className="cake-card group"
@@ -273,18 +298,23 @@ const Products = () => {
               <div className="bg-white/80 max-w-md mx-auto p-8 rounded-xl shadow-soft-pink">
                 <h3 className="text-xl font-heading text-deepbrown mb-3">No cakes found</h3>
                 <p className="text-warmgray-600 mb-6">
-                  We couldn't find any cakes matching your search criteria.
+                  We couldn't find any cakes matching your search criteria. Try adjusting your filters or consider requesting a custom design.
                 </p>
-                <button 
-                  onClick={() => {
-                    setSelectedCategory('all');
-                    setSearchQuery('');
-                  }}
-                  className="btn btn-primary inline-flex items-center"
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Clear Filters
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button 
+                    onClick={() => {
+                      setSelectedCategory('all');
+                      setSearchQuery('');
+                    }}
+                    className="btn btn-secondary inline-flex items-center"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Clear Filters
+                  </button>
+                  <Link to="/request-custom-design" className="btn btn-primary">
+                    Request Custom Design
+                  </Link>
+                </div>
               </div>
             </div>
           )}
@@ -303,9 +333,9 @@ const Products = () => {
                   Let us create a unique cake tailored to your vision and requirements. Our cake artists
                   love bringing special requests to life, no matter how simple or elaborate.
                 </p>
-                <button className="btn btn-primary">
+                <Link to="/request-custom-design" className="btn btn-primary">
                   Request Custom Design
-                </button>
+                </Link>
               </div>
               <div className="relative">
                 <div className="absolute -top-4 -right-4 w-24 h-24 bg-lilac/30 rounded-full"></div>
