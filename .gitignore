@@ -22,6 +22,7 @@ dist
 dist-ssr
 *.local
 build
+public/images/
 
 # Editor directories and files
 .vscode/*
