@@ -1,8 +1,21 @@
 import { Link } from 'react-router-dom'
-import { Instagram, Facebook, Twitter, Phone, Mail, MapPin, Clock } from 'lucide-react'
+import { Instagram, Facebook, Twitter, Share, Phone, Mail, MapPin, Clock } from 'lucide-react'
+
+import { companyInfo, contactInfo, businessHours, socialMediaLinks } from '@/utils/data';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear()
+
+  // Helper function to get appropriate social icon
+  const getSocialIcon = (platform: string) => {
+    switch (platform.toLowerCase()) {
+      case 'instagram': return <Instagram size={20} />;
+      case 'facebook': return <Facebook size={20} />;
+      case 'twitter': return <Twitter size={20} />;
+      case 'pinterest': return <Share size={20} />; 
+      default: return null;
+    }
+  };
 
   return (
     <footer className="bg-ivory border-t border-softgold/20 pt-16 pb-8">
@@ -13,23 +26,25 @@ const Footer = () => {
           <div>
             <div className="mb-4">
               <Link to="/" className="flex items-center">
-                <span className="font-accent text-rosepink text-4xl">Nana</span>
-                <span className="font-heading text-deepbrown text-xl ml-1">Pastry</span>
+                <img src={companyInfo.logo} alt={`${companyInfo.name} logo`} className="h-14 mr-2" />
               </Link>
             </div>
             <p className="text-warmgray-600 mb-6">
-              Indulge in the sweet artistry of our handcrafted cakes. Each creation is made with love, premium ingredients, and passion for pastry perfection.
+              {companyInfo.tagline}
             </p>
             <div className="flex space-x-4">
-              <a href="#" aria-label="Instagram" className="text-warmgray-500 hover:text-hotpink transition-colors duration-200">
-                <Instagram size={20} />
-              </a>
-              <a href="#" aria-label="Facebook" className="text-warmgray-500 hover:text-hotpink transition-colors duration-200">
-                <Facebook size={20} />
-              </a>
-              <a href="#" aria-label="Twitter" className="text-warmgray-500 hover:text-hotpink transition-colors duration-200">
-                <Twitter size={20} />
-              </a>
+              {socialMediaLinks.map((link) => (
+                <a 
+                  key={link.platform}
+                  href={link.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  aria-label={link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
+                  className="text-warmgray-500 hover:text-hotpink transition-colors duration-200"
+                >
+                  {getSocialIcon(link.platform)}
+                </a>
+              ))}
             </div>
           </div>
 
@@ -65,16 +80,20 @@ const Footer = () => {
             <h4 className="font-heading text-xl text-deepbrown mb-6">Contact Us</h4>
             <ul className="space-y-4">
               <li className="flex items-start">
-                <Phone className="w-5 h-5 mr-3 text-rosepink mt-0.5" />
-                <span className="text-warmgray-600">+1 (234) 567-8900</span>
+                <Phone className="w-5 h-5 mr-3 text-rosepink mt-0.5 flex-shrink-0" />
+                <a href={`tel:${contactInfo.phone}`} className="text-warmgray-600 hover:text-hotpink transition-colors">
+                  {contactInfo.phone}
+                </a>
               </li>
               <li className="flex items-start">
-                <Mail className="w-5 h-5 mr-3 text-rosepink mt-0.5" />
-                <span className="text-warmgray-600">hello@nanapastry.com</span>
+                <Mail className="w-5 h-5 mr-3 text-rosepink mt-0.5 flex-shrink-0" />
+                <a href={`mailto:${contactInfo.email}`} className="text-warmgray-600 hover:text-hotpink transition-colors">
+                  {contactInfo.email}
+                </a>
               </li>
               <li className="flex items-start">
                 <MapPin className="w-5 h-5 mr-3 text-rosepink mt-0.5 flex-shrink-0" />
-                <span className="text-warmgray-600">123 Sweet Lane, Bakery District, Caketown, CA 90210</span>
+                <span className="text-warmgray-600">{contactInfo.address}</span>
               </li>
             </ul>
           </div>
@@ -83,27 +102,17 @@ const Footer = () => {
           <div>
             <h4 className="font-heading text-xl text-deepbrown mb-6">Opening Hours</h4>
             <ul className="space-y-3">
-              <li className="flex items-start">
-                <Clock className="w-5 h-5 mr-3 text-rosepink mt-0.5" />
-                <div>
-                  <p className="text-warmgray-600 font-medium">Monday - Friday</p>
-                  <p className="text-warmgray-500">9:00 AM - 7:00 PM</p>
-                </div>
-              </li>
-              <li className="flex items-start">
-                <Clock className="w-5 h-5 mr-3 text-rosepink mt-0.5" />
-                <div>
-                  <p className="text-warmgray-600 font-medium">Saturday</p>
-                  <p className="text-warmgray-500">10:00 AM - 6:00 PM</p>
-                </div>
-              </li>
-              <li className="flex items-start">
-                <Clock className="w-5 h-5 mr-3 text-rosepink mt-0.5" />
-                <div>
-                  <p className="text-warmgray-600 font-medium">Sunday</p>
-                  <p className="text-warmgray-500">Closed</p>
-                </div>
-              </li>
+              {Object.entries(businessHours).map(([day, hours]) => (
+                <li key={day} className="flex items-start">
+                  <Clock className="w-5 h-5 mr-3 text-rosepink mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-warmgray-600 font-medium capitalize">{day}</p>
+                    <p className="text-warmgray-500 text-sm">
+                      {hours.open === 'Closed' ? 'Closed' : `${hours.open} - ${hours.close}`}
+                    </p>
+                  </div>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -124,7 +133,7 @@ const Footer = () => {
 
         {/* Copyright */}
         <div className="text-center text-warmgray-500 text-sm">
-          <p>© {currentYear} Nana Pastry. All rights reserved.</p>
+          <p>© {currentYear} {companyInfo.name}. All rights reserved.</p>
           <p className="mt-2">Handcrafted with 💕 and premium ingredients</p>
         </div>
       </div>

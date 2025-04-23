@@ -31,14 +31,14 @@ const staggerContainer = {
   }
 };
 
+// Generate categories dynamically from cakes data
+const uniqueCategories = Array.from(new Set(cakes.map(cake => cake.category)));
 const categories: { label: string; value: CakeCategory | 'all' }[] = [
   { label: 'All Cakes', value: 'all' },
-  { label: 'Birthday', value: 'birthday' },
-  { label: 'Wedding', value: 'wedding' },
-  { label: 'Celebration', value: 'celebration' },
-  { label: 'Cupcakes', value: 'cupcakes' },
-  { label: 'Seasonal', value: 'seasonal' },
-  { label: 'Custom', value: 'custom' },
+  ...uniqueCategories.map(category => ({
+    label: category.charAt(0).toUpperCase() + category.slice(1), // Capitalize category name
+    value: category,
+  })),
 ];
 
 const Products = () => {

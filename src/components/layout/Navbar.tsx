@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { Menu, X, Phone } from 'lucide-react'
 
+import { companyInfo, contactInfo } from '@/utils/data'
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -30,15 +32,18 @@ const Navbar = () => {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/90 backdrop-blur-md shadow-md py-2'
-          : 'bg-transparent py-4'
+          ? 'bg-white/90 backdrop-blur-md shadow-md py-1'
+          : 'bg-transparent py-2'
       }`}
     >
       <div className="container flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center">
-          <span className="font-accent text-rosepink text-3xl">Nana</span>
-          <span className="font-heading text-deepbrown text-xl ml-1">Pastry</span>
+          <img 
+            src={companyInfo.logo} 
+            alt={`${companyInfo.name} logo`} 
+            className="h-32 mr-1 transition-transform duration-300 ease-in-out hover:scale-105"
+          />
         </Link>
 
         {/* Desktop Navigation */}
@@ -85,7 +90,7 @@ const Navbar = () => {
           </NavLink>
           
           <a 
-            href="tel:+1234567890" 
+            href={`tel:${contactInfo.phone}`}
             className="btn btn-primary ml-4 group"
           >
             <Phone className="w-4 h-4 mr-2 group-hover:animate-pulse" />
@@ -154,7 +159,7 @@ const Navbar = () => {
             </NavLink>
             
             <a 
-              href="tel:+1234567890" 
+              href={`tel:${contactInfo.phone}`}
               className="btn btn-primary self-start mt-2 flex items-center"
               onClick={() => setIsOpen(false)}
             >

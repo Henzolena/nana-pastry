@@ -53,4 +53,78 @@ export interface TeamMember {
   image: string;
   bio: string;
   socialLinks?: SocialLink[];
+}
+
+export interface CompanyInfo {
+  name: string;
+  foundedYear: number;
+  tagline: string;
+  logo: string;
+  mission: string;
+  vision: string;
+}
+
+export interface AboutSection {
+  id: string;
+  title: string;
+  content: string;
+  image: string;
+}
+
+export interface ContactInfo {
+  name?: string;
+  address: string;
+  email: string;
+  phone: string;
+  mapLocation: { 
+    lat: number; 
+    lng: number; 
+  };
+}
+
+export interface ServiceInfo {
+  deliveryRadius: number;
+  deliveryFees: string;
+  setupService: boolean;
+  setupFees: string;
+  orderLeadTime: string;
+  depositAmount: string;
+}
+
+export interface BusinessHours {
+  [day: string]: {
+    open: string;
+    close: string;
+  };
+  monday: { open: string; close: string; };
+  tuesday: { open: string; close: string; };
+  wednesday: { open: string; close: string; };
+  thursday: { open: string; close: string; };
+  friday: { open: string; close: string; };
+  saturday: { open: string; close: string; };
+  sunday: { open: string; close: string; };
+}
+
+export interface ProcessStep {
+  step: number;
+  title: string;
+  description: string;
+}
+
+export interface HomePageContent {
+  hero: {
+    title: string;
+    subtitle: string;
+    description: string;
+    buttonText: string;
+    buttonLink: string;
+    image: string;
+    backgroundImage: string;
+  };
+  featuredCategories: {
+    title: string;
+    description: string;
+    image: string;
+    link: string;
+  }[];
 } 

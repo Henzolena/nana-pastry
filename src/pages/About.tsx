@@ -3,7 +3,7 @@ import { useInView } from 'react-intersection-observer';
 import { Link } from 'react-router-dom';
 import { Heart, Leaf, ThumbsUp, Sparkles, Award, Instagram, Facebook, Twitter } from 'lucide-react';
 
-import { team } from '@/utils/data';
+import { team, aboutSections } from '@/utils/data';
 
 // Animation variants
 const fadeIn = {
@@ -87,31 +87,13 @@ const About = () => {
         <div className="container">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <motion.div variants={fadeIn}>
-              <p className="title-accent">Our Journey</p>
-              <h2 className="mb-6">The Story Behind Our Sweet Creations</h2>
+              <p className="title-accent">{aboutSections[0].title}</p>
+              <h2 className="mb-6">{aboutSections[0].title}</h2>
               
               <div className="space-y-4 text-warmgray-700">
-                <p>
-                  Nana Pastry began in 2010 as a small home bakery founded by Sophia Williams, whose 
-                  grandmother (affectionately called "Nana") inspired her love for baking with her 
-                  traditional family recipes and techniques.
-                </p>
-                <p>
-                  What started as a passion project quickly blossomed into a beloved local bakery as 
-                  word spread about our extraordinary cakes that not only looked stunning but tasted 
-                  incredible. After outgrowing Sophia's home kitchen, we opened our first boutique 
-                  bakery in 2015.
-                </p>
-                <p>
-                  Today, Nana Pastry has become synonymous with artisanal quality, creative designs, 
-                  and memorable flavors. Our team of talented pastry chefs and cake artists work tirelessly 
-                  to create edible masterpieces for all of life's special moments.
-                </p>
-                <p>
-                  Despite our growth, we remain committed to Nana's original philosophy: using only the 
-                  finest ingredients, crafting each cake with love and attention to detail, and treating 
-                  every customer like family.
-                </p>
+                {aboutSections[0].content.split('\n\n').map((paragraph, index) => (
+                  <p key={index}>{paragraph}</p>
+                ))}
               </div>
             </motion.div>
             
@@ -122,39 +104,88 @@ const About = () => {
               <div className="absolute -top-4 -left-4 w-24 h-24 bg-blush/30 rounded-full"></div>
               <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-lavender/30 rounded-full"></div>
               
-              <div className="relative z-10 grid grid-cols-2 gap-4">
-                <div className="space-y-4">
-                  <div className="rounded-xl overflow-hidden shadow-soft-pink h-56">
-                    <img 
-                      src="/src/assets/images/about1.jpg" 
-                      alt="Nana Pastry beginnings" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="rounded-xl overflow-hidden shadow-soft-pink h-40">
-                    <img 
-                      src="/src/assets/images/about2.jpg" 
-                      alt="Cake decorating" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-4 mt-8">
-                  <div className="rounded-xl overflow-hidden shadow-soft-pink h-40">
-                    <img 
-                      src="/src/assets/images/about3.jpg" 
-                      alt="Our bakery" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="rounded-xl overflow-hidden shadow-soft-pink h-56">
-                    <img 
-                      src="/src/assets/images/about4.jpg" 
-                      alt="Team working together" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
+              <div className="relative z-10 rounded-xl overflow-hidden shadow-soft-pink aspect-video">
+                <img 
+                  src={aboutSections[0].image} 
+                  alt={aboutSections[0].title} 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Our Approach - Added Section */}
+      <motion.section
+        initial="hidden"
+        animate={storyInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="section bg-pink-gradient"
+      >
+        <div className="container">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <motion.div 
+              variants={fadeIn}
+              className="relative lg:order-last"
+            >
+              <div className="absolute -top-4 -right-4 w-24 h-24 bg-mint/30 rounded-full"></div>
+              <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-peachy/30 rounded-full"></div>
+              
+              <div className="relative z-10 rounded-xl overflow-hidden shadow-soft-pink aspect-video">
+                <img 
+                  src={aboutSections[1].image} 
+                  alt={aboutSections[1].title} 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </motion.div>
+            
+            <motion.div variants={fadeIn}>
+              <p className="title-accent">{aboutSections[1].title}</p>
+              <h2 className="mb-6">{aboutSections[1].title}</h2>
+              <div className="space-y-4 text-warmgray-700">
+                {aboutSections[1].content.split('\n\n').map((paragraph, index) => (
+                  <p key={index}>{paragraph}</p>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Our Commitment - Added Section */}
+      <motion.section
+        initial="hidden"
+        animate={storyInView ? "visible" : "hidden"}
+        variants={staggerContainer}
+        className="section"
+      >
+        <div className="container">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <motion.div variants={fadeIn}>
+              <p className="title-accent">{aboutSections[2].title}</p>
+              <h2 className="mb-6">{aboutSections[2].title}</h2>
+              <div className="space-y-4 text-warmgray-700">
+                {aboutSections[2].content.split('\n\n').map((paragraph, index) => (
+                  <p key={index}>{paragraph}</p>
+                ))}
+              </div>
+            </motion.div>
+            
+            <motion.div 
+              variants={fadeIn}
+              className="relative"
+            >
+              <div className="absolute -top-4 -left-4 w-24 h-24 bg-softgold/30 rounded-full"></div>
+              <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-babyblue/30 rounded-full"></div>
+              
+              <div className="relative z-10 rounded-xl overflow-hidden shadow-soft-pink aspect-video">
+                <img 
+                  src={aboutSections[2].image} 
+                  alt={aboutSections[2].title} 
+                  className="w-full h-full object-cover"
+                />
               </div>
             </motion.div>
           </div>

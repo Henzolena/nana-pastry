@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Phone, Mail, MapPin, Clock, Send, Instagram, Facebook, Twitter } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock, Send, Instagram, Facebook, Twitter, Share } from 'lucide-react';
+
+import { contactInfo, businessHours, socialMediaLinks } from '@/utils/data';
 
 // Animation variants
 const fadeIn = {
@@ -71,6 +73,17 @@ const Contact = () => {
     }, 1500);
   };
   
+  // Helper function to get appropriate social icon
+  const getSocialIcon = (platform: string) => {
+    switch (platform.toLowerCase()) {
+      case 'instagram': return <Instagram className="w-5 h-5" />;
+      case 'facebook': return <Facebook className="w-5 h-5" />;
+      case 'twitter': return <Twitter className="w-5 h-5" />;
+      case 'pinterest': return <Share className="w-5 h-5" />;
+      default: return null;
+    }
+  };
+
   return (
     <>
       {/* Hero Section */}
@@ -266,15 +279,15 @@ const Contact = () => {
                 variants={fadeIn}
               >
                 <div className="relative w-full h-full">
-                  <div className="absolute inset-0 z-10 flex items-center justify-center">
+                  <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
                     <div className="bg-hotpink w-8 h-8 rounded-full flex items-center justify-center animate-bounce">
                       <MapPin className="w-5 h-5 text-white" />
                     </div>
                   </div>
                   <div className="absolute bottom-4 left-4 z-10">
                     <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-soft-pink text-sm">
-                      <p className="font-medium text-deepbrown">Nana Pastry</p>
-                      <p className="text-warmgray-600">123 Sweet Lane, Bakery District</p>
+                      <p className="font-medium text-deepbrown">{contactInfo.name || 'Nana Pastry'}</p>
+                      <p className="text-warmgray-600">{contactInfo.address}</p>
                     </div>
                   </div>
                   <iframe
@@ -303,8 +316,8 @@ const Contact = () => {
                     </div>
                     <div>
                       <p className="text-warmgray-600 font-medium">Phone</p>
-                      <a href="tel:+1234567890" className="text-deepbrown hover:text-hotpink transition-colors">
-                        +1 (234) 567-8900
+                      <a href={`tel:${contactInfo.phone}`} className="text-deepbrown hover:text-hotpink transition-colors">
+                        {contactInfo.phone}
                       </a>
                     </div>
                   </li>
@@ -315,8 +328,8 @@ const Contact = () => {
                     </div>
                     <div>
                       <p className="text-warmgray-600 font-medium">Email</p>
-                      <a href="mailto:hello@nanapastry.com" className="text-deepbrown hover:text-hotpink transition-colors">
-                        hello@nanapastry.com
+                      <a href={`mailto:${contactInfo.email}`} className="text-deepbrown hover:text-hotpink transition-colors">
+                        {contactInfo.email}
                       </a>
                     </div>
                   </li>
@@ -328,8 +341,18 @@ const Contact = () => {
                     <div>
                       <p className="text-warmgray-600 font-medium">Address</p>
                       <p className="text-deepbrown">
-                        123 Sweet Lane, Bakery District, Caketown, CA 90210
+                        {contactInfo.address}
                       </p>
+                      {contactInfo.mapLocation && (
+                        <a 
+                          href={`https://www.google.com/maps/search/?api=1&query=${contactInfo.mapLocation.lat},${contactInfo.mapLocation.lng}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-hotpink hover:underline mt-1 inline-block"
+                        >
+                          View on Map
+                        </a>
+                      )}
                     </div>
                   </li>
                 </ul>
@@ -343,35 +366,19 @@ const Contact = () => {
                 <h3 className="text-xl font-heading text-deepbrown mb-6">Opening Hours</h3>
                 
                 <ul className="space-y-4">
-                  <li className="flex items-start">
-                    <div className="bg-lilac/30 rounded-full p-2 mr-4">
-                      <Clock className="w-5 h-5 text-hotpink" />
-                    </div>
-                    <div>
-                      <p className="text-warmgray-600 font-medium">Monday - Friday</p>
-                      <p className="text-deepbrown">9:00 AM - 7:00 PM</p>
-                    </div>
-                  </li>
-                  
-                  <li className="flex items-start">
-                    <div className="bg-lilac/30 rounded-full p-2 mr-4">
-                      <Clock className="w-5 h-5 text-hotpink" />
-                    </div>
-                    <div>
-                      <p className="text-warmgray-600 font-medium">Saturday</p>
-                      <p className="text-deepbrown">10:00 AM - 6:00 PM</p>
-                    </div>
-                  </li>
-                  
-                  <li className="flex items-start">
-                    <div className="bg-lilac/30 rounded-full p-2 mr-4">
-                      <Clock className="w-5 h-5 text-hotpink" />
-                    </div>
-                    <div>
-                      <p className="text-warmgray-600 font-medium">Sunday</p>
-                      <p className="text-deepbrown">Closed</p>
-                    </div>
-                  </li>
+                  {Object.entries(businessHours).map(([day, hours]) => (
+                    <li key={day} className="flex items-start">
+                      <div className="bg-lilac/30 rounded-full p-2 mr-4">
+                        <Clock className="w-5 h-5 text-hotpink" />
+                      </div>
+                      <div>
+                        <p className="text-warmgray-600 font-medium capitalize">{day}</p>
+                        <p className="text-deepbrown">
+                          {hours.open === 'Closed' ? 'Closed' : `${hours.open} - ${hours.close}`}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
                 </ul>
               </motion.div>
               
@@ -379,27 +386,18 @@ const Contact = () => {
               <motion.div variants={fadeIn}>
                 <h3 className="text-xl font-heading text-deepbrown mb-4">Follow Us</h3>
                 <div className="flex space-x-4">
-                  <a 
-                    href="#" 
-                    className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-soft-pink border border-blush/20 text-warmgray-600 hover:text-hotpink hover:border-hotpink transition-colors"
-                    aria-label="Instagram"
-                  >
-                    <Instagram className="w-5 h-5" />
-                  </a>
-                  <a 
-                    href="#" 
-                    className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-soft-pink border border-blush/20 text-warmgray-600 hover:text-hotpink hover:border-hotpink transition-colors"
-                    aria-label="Facebook"
-                  >
-                    <Facebook className="w-5 h-5" />
-                  </a>
-                  <a 
-                    href="#" 
-                    className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-soft-pink border border-blush/20 text-warmgray-600 hover:text-hotpink hover:border-hotpink transition-colors"
-                    aria-label="Twitter"
-                  >
-                    <Twitter className="w-5 h-5" />
-                  </a>
+                  {socialMediaLinks.map((link) => (
+                    <a 
+                      key={link.platform}
+                      href={link.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-soft-pink border border-blush/20 text-warmgray-600 hover:text-hotpink hover:border-hotpink transition-colors"
+                      aria-label={link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
+                    >
+                      {getSocialIcon(link.platform)}
+                    </a>
+                  ))}
                 </div>
               </motion.div>
             </motion.div>

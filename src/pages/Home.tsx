@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Heart, Star, Clock, Award, Phone } from 'lucide-react';
 
-import { cakes, testimonials } from '@/utils/data';
+import { cakes, testimonials, homeContent, contactInfo } from '@/utils/data';
 import { Cake } from '@/types';
 import CakeDetailsModal from '@/components/CakeDetailsModal';
 
@@ -62,7 +62,7 @@ const Home = () => {
   };
 
   return (
-    <div className="pt-16">
+    <div className="pt-36">
       {/* Add Modal */}
       <CakeDetailsModal 
         cake={selectedCake}
@@ -78,7 +78,7 @@ const Home = () => {
         variants={fadeIn}
         className="relative h-screen flex items-center overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(245, 221, 233, 0.8), rgba(255, 245, 238, 0.9)), url('/src/assets/images/hero-bg.jpg')`,
+          backgroundImage: `linear-gradient(to bottom, rgba(245, 221, 233, 0.8), rgba(255, 245, 238, 0.9)), url('${homeContent.hero.backgroundImage}')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         } as React.CSSProperties}
@@ -91,22 +91,21 @@ const Home = () => {
               className="font-script text-rosepink text-2xl md:text-3xl mb-2"
               variants={fadeIn}
             >
-              Delicious & Beautiful
+              {homeContent.hero.subtitle}
             </motion.p>
             
             <motion.h1 
               className="text-4xl md:text-6xl lg:text-7xl font-heading font-bold text-deepbrown mb-6"
               variants={fadeIn}
             >
-              Handcrafted Cakes for Your Special Moments
+              {homeContent.hero.title}
             </motion.h1>
             
             <motion.p 
               className="text-lg md:text-xl text-warmgray-700 mb-8"
               variants={fadeIn}
             >
-              Indulge in our exquisite cakes and pastries made with premium ingredients, 
-              passion, and artistry. Each creation is crafted to make your celebrations unforgettable.
+              {homeContent.hero.description}
             </motion.p>
             
             <motion.div 
@@ -117,11 +116,11 @@ const Home = () => {
                 Explore Our Cakes
               </Link>
               
-              <Link to="/request-custom-design" className="btn btn-secondary">
-                Custom Order
+              <Link to={homeContent.hero.buttonLink} className="btn btn-secondary">
+                {homeContent.hero.buttonText}
               </Link>
               
-              <a href="tel:+1234567890" className="btn btn-outline group">
+              <a href={`tel:${contactInfo.phone}`} className="btn btn-outline group">
                 <Phone className="w-4 h-4 mr-2 group-hover:animate-pulse" />
                 Call to Order
               </a>
@@ -429,11 +428,11 @@ const Home = () => {
               variants={fadeIn}
             >
               <a 
-                href="tel:+1234567890" 
+                href={`tel:${contactInfo.phone}`} 
                 className="btn btn-primary"
               >
                 <Phone className="w-4 h-4 mr-2" />
-                Call to Order: (123) 456-7890
+                Call to Order: {contactInfo.phone}
               </a>
               
               <Link to="/request-custom-design" className="btn btn-secondary">

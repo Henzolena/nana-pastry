@@ -2,8 +2,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Calendar, Upload, DollarSign, Cake, Users, Clock, MessageSquare, Info, Phone, Mail, User } from 'lucide-react';
+import { Calendar, Upload, DollarSign, Cake, Users, Clock, MessageSquare, Info, Phone, Mail, User, Check } from 'lucide-react';
 import { useForm, SubmitHandler } from 'react-hook-form';
+import { designProcess, serviceInfo } from '@/utils/data';
 // Animation variants
 const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -61,6 +62,7 @@ const RequestCustomDesign = () => {
     const { register, handleSubmit, formState: { errors }, reset } = useForm<FormInputs>();
     // Set up intersection observer hooks for animations
     const [headerRef, headerInView] = useInView({ triggerOnce: true, threshold: 0.1 });
+    const [processRef, processInView] = useInView({ triggerOnce: true, threshold: 0.1 });
     const [formRef, formInView] = useInView({ triggerOnce: true, threshold: 0.1 });
     const [formInfoRef, formInfoInView] = useInView({ triggerOnce: true, threshold: 0.1 });
     const handleFlavorToggle = (flavor: string) => {
@@ -138,6 +140,48 @@ const RequestCustomDesign = () => {
                     </motion.p>
                 </div>
             </motion.section>
+
+            {/* Design Process Section - Added */}
+            <motion.section
+                ref={processRef}
+                initial="hidden"
+                animate={processInView ? "visible" : "hidden"}
+                variants={staggerContainer}
+                className="section"
+            >
+                <div className="container max-w-5xl">
+                    <motion.div className="text-center mb-12" variants={fadeIn}>
+                        <p className="title-accent">How It Works</p>
+                        <h2 className="text-3xl md:text-4xl font-heading text-deepbrown">Our Custom Design Process</h2>
+                    </motion.div>
+                    <div className="relative">
+                        {/* Timeline line */}
+                        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-transparent via-rosepink/50 to-transparent hidden md:block"></div>
+                        
+                        {designProcess.map((step, index) => (
+                            <motion.div 
+                                key={step.step}
+                                className={`flex items-center mb-8 md:mb-12 relative ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}
+                                variants={fadeIn}
+                            >
+                                {/* Step Content */}
+                                <div className={`w-full md:w-1/2 ${index % 2 === 0 ? 'md:pr-8' : 'md:pl-8'}`}>
+                                    <div className="glass p-6 rounded-xl shadow-soft-pink border border-blush/20">
+                                        <p className="font-script text-rosepink text-xl mb-1">Step {step.step}</p>
+                                        <h3 className="text-xl font-heading text-deepbrown mb-2">{step.title}</h3>
+                                        <p className="text-warmgray-600 text-sm">{step.description}</p>
+                                    </div>
+                                </div>
+                                {/* Step Circle */}
+                                <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2 w-10 h-10 bg-white rounded-full items-center justify-center border-2 border-rosepink shadow-md">
+                                    <Check className="w-5 h-5 text-rosepink" />
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </motion.section>
+
             {/* Form Section */}
             <motion.section
                 ref={formRef}
@@ -491,9 +535,19 @@ const RequestCustomDesign = () => {
                                 <Clock className="w-9 h-9 text-deepbrown" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-heading text-deepbrown mb-2">Custom Cake Lead Time</h3>
-                                <p className="text-warmgray-600 mb-2">We require a minimum of 7 days advance notice for all custom cake orders. For complex designs or wedding cakes, we recommend placing your order 3-4 weeks in advance.</p>
-                                <p className="text-sm text-warmgray-500 italic">Our designers will review your request and contact you within 24 hours to discuss details and provide a quote.</p>
+                                <h3 className="text-xl font-heading text-deepbrown mb-2">Order Information</h3>
+                                <p className="text-warmgray-600 mb-2">
+                                    Order Lead Time: <span className="font-medium">{serviceInfo.orderLeadTime}.</span>
+                                </p>
+                                <p className="text-warmgray-600 mb-2">
+                                    For complex designs or wedding cakes, we recommend placing your order <span className="font-medium">3-4 weeks</span> in advance.
+                                </p>
+                                <p className="text-warmgray-600 mb-2">
+                                    A deposit of <span className="font-medium">{serviceInfo.depositAmount}</span> is required to secure your date.
+                                </p>
+                                <p className="text-sm text-warmgray-500 italic">
+                                    Our team will review your request and contact you within 24 hours to discuss details and provide a quote.
+                                </p>
                             </div>
                         </div>
                     </motion.div>
