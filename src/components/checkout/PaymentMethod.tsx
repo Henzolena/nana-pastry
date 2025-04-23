@@ -4,7 +4,7 @@ import { cn } from '@/utils/cn';
 import { 
   CreditCard, 
   DollarSign,
-  CheckCircle2
+  // CheckCircle2
 } from 'lucide-react';
 
 export interface PaymentInfo {

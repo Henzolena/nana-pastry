@@ -16,19 +16,19 @@ export const aboutSections: AboutSection[] = [
     id: "our-journey",
     title: "Our Journey",
     content: "Nana Pastry began as a small home-based bakery, inspired by a passion for creating delicious and beautifully crafted desserts. Our journey is rooted in a love for baking and a commitment to quality. Established in 2020, we've been dedicated to bringing joy through our creations ever since.",
-    image: "/src/assets/images/CreatingSweetMemories2.jpg"
+    image: "/images/cakes/about-our-journey.webp"
   },
   {
     id: "our-approach",
     title: "Our Approach",
     content: "At Nana Pastry, we believe that every cake should be as unique as the occasion it celebrates. Our pastries feel like home, with a natural taste that brings comfort and joy to every bite. We use high-quality, natural ingredients to create treats that are both delicious and wholesome.",
-    image: "/src/assets/images/CreatingSweetMemories.jpg"
+    image: "/images/cakes/about-our-approach.webp"
   },
   {
     id: "our-commitment",
     title: "Our Commitment",
     content: "We're committed to quality in everything we do. From sourcing the freshest ingredients to ensuring timely delivery, we maintain the highest standards at every step. We believe in creating pastries that not only look beautiful but taste exceptional as well.",
-    image: "/src/assets/images/QualityinEveryBite.jpg"
+    image: "/images/cakes/about-our-commitment.png"
   }
 ];
 

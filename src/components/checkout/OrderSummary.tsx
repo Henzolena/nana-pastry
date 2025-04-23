@@ -1,4 +1,3 @@
-import React from 'react';
 import { ShoppingBag } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -30,13 +29,6 @@ export default function OrderSummary({
   total,
   className
 }: OrderSummaryProps) {
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
   if (items.length === 0) {
     return (
       <div className={`bg-blush/5 rounded-lg p-6 ${className}`}>

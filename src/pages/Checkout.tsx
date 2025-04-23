@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
-import { cn } from '@/utils/cn';
+
 import CustomerInfoForm, { CustomerInfo } from '@/components/checkout/CustomerInfoForm';
 import DeliveryOptionsForm, { DeliveryInfo } from '@/components/checkout/DeliveryOptionsForm';
 import OrderReview from '@/components/checkout/OrderReview';
@@ -10,7 +10,6 @@ import PaymentMethod, { PaymentInfo } from '@/components/checkout/PaymentMethod'
 import OrderConfirmation from '@/components/checkout/OrderConfirmation';
 import { v4 as uuidv4 } from 'uuid';
 import CheckoutLayout, { CheckoutStep } from '@/components/checkout/CheckoutLayout';
-import { Button } from '@/components/ui/Button';
 
 // Checkout state interface
 interface CheckoutState {
@@ -29,132 +28,7 @@ const checkoutSteps = [
   { id: CheckoutStep.CONFIRMATION, title: 'Confirmation' }, // Add confirmation step definition
 ];
 
-// Mock cart data
-const mockCartItems = [
-  {
-    id: '1',
-    name: 'Strawberry Cake',
-    price: 35.99,
-    quantity: 1,
-    image: '/images/products/cake1.jpg',
-    options: 'Size: Medium'
-  },
-  {
-    id: '2',
-    name: 'Chocolate Cupcakes',
-    price: 12.99,
-    quantity: 2,
-    image: '/images/products/cupcakes.jpg',
-    options: 'Box of 6'
-  }
-];
 
-// Temporary placeholder form, will be replaced
-const SimpleCustomerInfoForm = ({ onNext }: { onNext: () => void }) => {
-  return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-deepbrown">Contact Information</h2>
-      
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label htmlFor="firstName" className="block text-sm font-medium text-deepbrown">First Name</label>
-            <input 
-              id="firstName" 
-              placeholder="First Name"
-              className="block w-full rounded-md border-blush/20 shadow-sm focus:border-hotpink focus:ring-hotpink sm:text-sm bg-white/80 py-2.5" 
-            />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="lastName" className="block text-sm font-medium text-deepbrown">Last Name</label>
-            <input 
-              id="lastName" 
-              placeholder="Last Name"
-              className="block w-full rounded-md border-blush/20 shadow-sm focus:border-hotpink focus:ring-hotpink sm:text-sm bg-white/80 py-2.5" 
-            />
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <label htmlFor="email" className="block text-sm font-medium text-deepbrown">Email</label>
-          <input 
-            id="email" 
-            type="email" 
-            placeholder="your@email.com"
-            className="block w-full rounded-md border-blush/20 shadow-sm focus:border-hotpink focus:ring-hotpink sm:text-sm bg-white/80 py-2.5" 
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <label htmlFor="phone" className="block text-sm font-medium text-deepbrown">Phone Number</label>
-          <input 
-            id="phone" 
-            placeholder="(123) 456-7890"
-            className="block w-full rounded-md border-blush/20 shadow-sm focus:border-hotpink focus:ring-hotpink sm:text-sm bg-white/80 py-2.5" 
-          />
-        </div>
-      </div>
-      
-      <h2 className="text-xl font-semibold text-deepbrown pt-4">Billing Address</h2>
-      
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="address" className="block text-sm font-medium text-deepbrown">Street Address</label>
-          <input 
-            id="address" 
-            placeholder="123 Main St"
-            className="block w-full rounded-md border-blush/20 shadow-sm focus:border-hotpink focus:ring-hotpink sm:text-sm bg-white/80 py-2.5" 
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <label htmlFor="apartment" className="block text-sm font-medium text-deepbrown">Apartment, suite, etc. (optional)</label>
-          <input 
-            id="apartment" 
-            placeholder="Apt #"
-            className="block w-full rounded-md border-blush/20 shadow-sm focus:border-hotpink focus:ring-hotpink sm:text-sm bg-white/80 py-2.5" 
-          />
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <label htmlFor="city" className="block text-sm font-medium text-deepbrown">City</label>
-            <input 
-              id="city" 
-              placeholder="City"
-              className="block w-full rounded-md border-blush/20 shadow-sm focus:border-hotpink focus:ring-hotpink sm:text-sm bg-white/80 py-2.5" 
-            />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="state" className="block text-sm font-medium text-deepbrown">State</label>
-            <input 
-              id="state" 
-              placeholder="State"
-              className="block w-full rounded-md border-blush/20 shadow-sm focus:border-hotpink focus:ring-hotpink sm:text-sm bg-white/80 py-2.5" 
-            />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="zipCode" className="block text-sm font-medium text-deepbrown">ZIP Code</label>
-            <input 
-              id="zipCode" 
-              placeholder="ZIP Code"
-              className="block w-full rounded-md border-blush/20 shadow-sm focus:border-hotpink focus:ring-hotpink sm:text-sm bg-white/80 py-2.5" 
-            />
-          </div>
-        </div>
-      </div>
-      
-      <div className="pt-6">
-        <Button 
-          onClick={onNext}
-          className="w-full md:w-auto bg-hotpink hover:bg-hotpink/90 text-white"
-        >
-          Continue to Shipping
-        </Button>
-      </div>
-    </div>
-  );
-};
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -250,7 +124,6 @@ const Checkout: React.FC = () => {
   const total = subtotal + tax + shippingCost - discount;
 
   let currentStepContent;
-  const currentStepIndex = getCurrentStepIndex();
   
   // Render the correct component based on the current step
   switch (currentStep) {
@@ -305,7 +178,6 @@ const Checkout: React.FC = () => {
       currentStepContent = <div>Invalid Step</div>;
   }
 
-  const showProgressBar = currentStep !== CheckoutStep.CONFIRMATION;
   const showLayout = currentStep !== CheckoutStep.CONFIRMATION; // Don't show layout on confirmation
 
   // We will wrap the step content with CheckoutLayout for steps before confirmation

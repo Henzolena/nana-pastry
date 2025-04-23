@@ -2,7 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid'; // We'll need to install this package
 import { CartContextType, CartState, CartAction, CartItem } from '@/types/cart';
 import { Cake, CakeSize } from '@/types';
-import { serviceInfo } from '@/utils/data';
+
 
 // Default cart state
 const defaultCartState: CartState = {
