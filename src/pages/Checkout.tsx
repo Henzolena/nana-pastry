@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
 
@@ -14,6 +14,7 @@ import CheckoutLayout, { CheckoutStep } from '@/components/checkout/CheckoutLayo
 // Checkout state interface
 interface CheckoutState {
   customerInfo: CustomerInfo | null;
+  customizationOptions?: any; // We'll type this properly later
   deliveryInfo: DeliveryInfo | null;
   paymentInfo: PaymentInfo | null;
   orderId: string;
@@ -22,10 +23,11 @@ interface CheckoutState {
 // Steps configuration - Include enum values for easier lookup
 const checkoutSteps = [
   { id: CheckoutStep.CUSTOMER_INFO, title: 'Your Information' },
+  { id: CheckoutStep.CAKE_CUSTOMIZATION, title: 'Cake Customization' },
   { id: CheckoutStep.SHIPPING, title: 'Delivery' },
   { id: CheckoutStep.PAYMENT, title: 'Payment' },
   { id: CheckoutStep.REVIEW, title: 'Review' },
-  { id: CheckoutStep.CONFIRMATION, title: 'Confirmation' }, // Add confirmation step definition
+  { id: CheckoutStep.CONFIRMATION, title: 'Confirmation' },
 ];
 
 
@@ -93,7 +95,8 @@ const Checkout: React.FC = () => {
     if (customerInfo.saveInfo) {
        localStorage.setItem('customerInfo', JSON.stringify(customerInfo));
     }
-    goToNextStep();
+    // Instead of going to the next step directly, redirect to the customization page
+    navigate('/checkout/customize');
   };
 
   const handleDeliveryOptionsSubmit = (deliveryInfo: DeliveryInfo) => {
@@ -134,6 +137,10 @@ const Checkout: React.FC = () => {
           onSubmit={handleCustomerInfoSubmit} 
         />
       );
+      break;
+    case CheckoutStep.CAKE_CUSTOMIZATION:
+      // Redirect to the dedicated customization page
+      currentStepContent = <Navigate to="/checkout/customize" replace />;
       break;
     case CheckoutStep.SHIPPING:
       currentStepContent = (

@@ -226,4 +226,77 @@
   ::placeholder {
     @apply text-warmgray-400 text-sm;
   }
+}
+
+/* Updated Smoke Animation */
+@keyframes riseSmoke {
+  0% {
+    transform: translate(0px, 20px) scale(0.95);
+    opacity: 0;
+  }
+  15% {
+    /* Fade in more gradually */
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate(5px, -40px) scale(1);
+    opacity: 0.6; /* Hold opacity longer */
+  }
+  85% {
+    transform: translate(-5px, -90px) scale(1.02);
+    opacity: 0.3; /* Start fading out earlier */
+  }
+  100% {
+    transform: translate(0px, -130px) scale(1.05);
+    opacity: 0;
+  }
+}
+
+.smoke-svg {
+  bottom: 0;
+  /* Remove filter style from here if applied via inline style in JSX */
+}
+
+.smoke-wisp {
+  transform-origin: 50% 100%;
+  will-change: transform, opacity;
+}
+
+/* Varied timings and delays for more randomness */
+.smoke-wisp-1 {
+  animation: riseSmoke 30s linear infinite 0.5s;
+}
+
+.smoke-wisp-2 {
+  animation: riseSmoke 40s linear infinite 5s;
+}
+
+.smoke-wisp-3 {
+  animation: riseSmoke 28s linear infinite 9s;
+}
+
+.smoke-wisp-4 {
+  animation: riseSmoke 35s linear infinite 12s;
+}
+
+/* Other Styles */
+/* Example: Ensure body has no margin if needed */
+body {
+  /* existing styles */
+}
+
+/* Added Shake Animation */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px) rotate(-5deg); }
+  20%, 40%, 60%, 80% { transform: translateX(3px) rotate(5deg); }
+}
+
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Apply shake on group hover specifically for the icon */
+.group:hover .group-hover\:animate-shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
 } 

@@ -288,7 +288,11 @@ const Products = () => {
                       <h3 className="text-xl font-heading text-deepbrown">{cake.name}</h3>
                       
                       <div className="flex justify-between items-center mt-2">
-                        <span className="font-heading text-rosepink text-lg">${cake.price.toFixed(2)}</span>
+                        {cake.sizes && cake.sizes.length > 0 && (
+                          <span className="font-heading text-rosepink text-lg">
+                            {cake.sizes.length > 1 ? 'From ' : ''}${Math.min(...cake.sizes.map(s => s.price)).toFixed(2)}
+                          </span>
+                        )}
                         <button 
                           onClick={() => handleOpenCakeDetails(cake)}
                           className="text-sm font-medium text-deepbrown hover:text-hotpink transition-colors duration-200 bg-white/70 hover:bg-white px-3 py-1 rounded-full"
@@ -358,7 +362,7 @@ const Products = () => {
                 <div className="absolute -top-4 -right-4 w-24 h-24 bg-lilac/30 rounded-full"></div>
                 <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-peachy/30 rounded-full"></div>
                 <img 
-                  src="/src/assets/images/custom-cake.jpg" 
+                  src="images/cakes/custom-cake.jpg" 
                   alt="Custom cake design" 
                   className="relative z-10 rounded-xl shadow-soft-pink"
                 />

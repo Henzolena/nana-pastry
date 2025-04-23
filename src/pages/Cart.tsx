@@ -1,5 +1,5 @@
 import React from 'react';
-import { Minus, Plus, Trash, ArrowRight } from 'lucide-react';
+import { Minus, Plus, Trash, ArrowRight, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
@@ -144,13 +144,24 @@ const Cart: React.FC = () => {
                               </button>
                             </div>
 
-                            <button
-                              onClick={() => removeItem(item.id)}
-                              className="text-sm font-medium text-pink-600 hover:text-pink-800 flex items-center"
-                            >
-                              <Trash className="h-4 w-4 mr-1" />
-                              Remove
-                            </button>
+                            <div className="flex items-center space-x-2">
+                              <Link
+                                to={`/cart/customize/${items.indexOf(item)}`}
+                                className="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center"
+                                aria-label={`Customize ${item.name}`}
+                              >
+                                <Settings className="h-4 w-4 mr-1" />
+                                Customize
+                              </Link>
+                              
+                              <button
+                                onClick={() => removeItem(item.id)}
+                                className="text-sm font-medium text-pink-600 hover:text-pink-800 flex items-center"
+                              >
+                                <Trash className="h-4 w-4 mr-1" />
+                                Remove
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>

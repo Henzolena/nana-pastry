@@ -3,11 +3,14 @@ export interface Cake {
   name: string;
   category: CakeCategory;
   description: string;
-  price: number;
   images: string[];
   featured: boolean;
   ingredients?: string[];
+  baseIngredients?: string[];
   flavors?: string[];
+  baseFlavor?: string;
+  fillings?: string[];
+  frostings?: string[];
   allergens?: string[];
   sizes?: CakeSize[];
 }
@@ -18,12 +21,13 @@ export type CakeCategory =
   | 'celebration'
   | 'cupcakes'
   | 'seasonal'
-  | 'custom';
+  | 'custom'
+  | 'other';
 
 export interface CakeSize {
   label: string;
   servings: number;
-  priceModifier: number;
+  price: number;
 }
 
 export interface TestimonialType {
@@ -83,12 +87,26 @@ export interface ContactInfo {
 }
 
 export interface ServiceInfo {
-  deliveryRadius: number;
-  deliveryFees: string;
-  setupService: boolean;
-  setupFees: string;
-  orderLeadTime: string;
-  depositAmount: string;
+  deliveryRadius?: number;
+  deliveryFees?: string;
+  setupService?: boolean;
+  setupFees?: string;
+  orderLeadTime?: string;
+  depositAmount?: string;
+  cancellationPolicy?: string;
+}
+
+export interface PickupInfo {
+  hours: {
+    monday: string;
+    tuesday: string;
+    wednesday: string;
+    thursday: string;
+    friday: string;
+    saturday: string;
+    sunday: string;
+  };
+  address?: string;
 }
 
 export interface BusinessHours {

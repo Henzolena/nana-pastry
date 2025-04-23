@@ -91,6 +91,42 @@ const Home = () => {
       >
         <div className="absolute inset-0 bg-gold-shimmer opacity-50"></div>
         
+        {/* Background Image/Video */}
+        <div className="absolute inset-0 -z-20">
+          <img 
+            src={homeContent.hero.backgroundImage} 
+            alt="Background of pastries and cakes" 
+            className="object-cover w-full h-full filter brightness-75"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10"></div>
+        </div>
+
+        {/* Smoke Animation Container */}
+        <div className="absolute bottom-0 left-0 w-full h-24 sm:h-32 md:h-48 z-10 overflow-hidden pointer-events-none">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 1200 150"
+            preserveAspectRatio="none"
+            className="absolute bottom-0 left-0 w-full h-auto smoke-svg"
+            style={{ filter: 'url(#smokeBlur)' }}
+          >
+            <defs>
+              <linearGradient id="smokeGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+                <stop offset="0%" style={{stopColor: 'rgba(255, 255, 255, 0.25)', stopOpacity: 1}} />
+                <stop offset="80%" style={{stopColor: 'rgba(255, 255, 255, 0.05)', stopOpacity: 1}} />
+                <stop offset="100%" style={{stopColor: 'rgba(255, 255, 255, 0)', stopOpacity: 1}} />
+              </linearGradient>
+              <filter id="smokeBlur">
+                <feGaussianBlur stdDeviation="5" />
+              </filter>
+            </defs>
+            <path d="M0,150 Q300,100 600,110 T1200,90 V150 Z" fill="url(#smokeGradient)" className="smoke-wisp smoke-wisp-1"></path>
+            <path d="M0,150 Q200,70 600,95 T1200,70 V150 Z" fill="url(#smokeGradient)" className="smoke-wisp smoke-wisp-2"></path>
+            <path d="M0,150 Q400,110 700,120 T1200,105 V150 Z" fill="url(#smokeGradient)" className="smoke-wisp smoke-wisp-3"></path>
+            <path d="M0,150 Q150,120 500,130 T1100,110 V150 Z" fill="url(#smokeGradient)" className="smoke-wisp smoke-wisp-4"></path>
+          </svg>
+        </div>
+
         <div className="container relative z-10">
           <div className="max-w-2xl">
             <motion.p 
@@ -184,7 +220,11 @@ const Home = () => {
                   <h3 className="text-xl font-heading text-deepbrown">{cake.name}</h3>
                   <p className="text-warmgray-600 text-sm line-clamp-2 mt-1 mb-2">{cake.description}</p>
                   <div className="flex justify-between items-center">
-                    <span className="font-heading text-rosepink text-lg">${cake.price.toFixed(2)}</span>
+                    {cake.sizes && cake.sizes.length > 0 && (
+                      <span className="font-heading text-rosepink text-lg">
+                        {cake.sizes.length > 1 ? 'From ' : ''}${Math.min(...cake.sizes.map(s => s.price)).toFixed(2)}
+                      </span>
+                    )}
                     <button 
                       onClick={(e) => {
                         e.preventDefault();

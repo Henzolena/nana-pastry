@@ -150,7 +150,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: uuidv4(),
       cakeId: cake.id,
       name: cake.name,
-      price: cake.price + size.priceModifier,
+      price: size.price,
       quantity,
       size,
       image: cake.images[0], // First image as the thumbnail

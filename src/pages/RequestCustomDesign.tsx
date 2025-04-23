@@ -147,28 +147,44 @@ const RequestCustomDesign = () => {
                 </div>
             </motion.section>
 
-            {/* Decorative Image Section - NEW */}
-            <section className="py-12 bg-white">
-                <div className="container max-w-6xl">
-                    <div className="relative rounded-2xl overflow-hidden shadow-soft-pink border border-blush/20">
-                        <div className="absolute inset-0 bg-gradient-to-r from-hotpink/40 to-transparent z-10"></div>
-                        <img 
-                            src="/src/assets/images/custom-cake-banner.jpg" 
-                            alt="Custom cake creation process" 
-                            className="w-full h-[400px] object-cover"
-                        />
-                        <div className="absolute top-1/2 left-12 transform -translate-y-1/2 z-20 max-w-md">
-                            <div className="bg-white/80 backdrop-blur-sm p-6 md:p-8 rounded-xl shadow-lg">
-                                <h3 className="text-2xl font-heading text-deepbrown mb-3">Your Dream, Our Expertise</h3>
-                                <p className="text-warmgray-700">
+            {/* Decorative Image Section - Your Dream, Our Expertise */}
+            <motion.section 
+                className="py-0 bg-white overflow-hidden"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.8 }}
+            >
+                <div className="relative w-full">
+                    {/* Enhanced overlay with multiple gradient layers for depth */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-hotpink/60 via-hotpink/30 to-transparent z-10"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-deepbrown/30 to-transparent z-10"></div>
+                    
+                    {/* Full width image with increased height */}
+                    <img 
+                        src="/src/assets/images/custom-cake-banner.png" 
+                        alt="Custom cake creation process" 
+                        className="w-full h-[300px] sm:h-[400px] md:h-[700px] object-cover object-center"
+                    />
+                    
+                    {/* Content container */}
+                    <div className="container mx-auto">
+                        <div className="absolute top-1/2 transform -translate-y-1/2 z-20 px-4 sm:px-8 md:px-12 w-full sm:w-auto">
+                            <motion.div 
+                                className="max-w-xs sm:max-w-sm md:max-w-md bg-white/85 backdrop-blur-sm p-5 sm:p-6 md:p-8 rounded-xl shadow-lg border border-white/30"
+                                initial={{ x: -50, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ delay: 0.3, duration: 0.6 }}
+                            >
+                                <h3 className="text-xl sm:text-2xl md:text-3xl font-heading text-deepbrown mb-2 md:mb-3">Your Dream, Our Expertise</h3>
+                                <p className="text-sm sm:text-base md:text-lg text-warmgray-700">
                                     From sketch to slice, we bring your vision to life with precision and artistry. 
                                     Our custom cakes are designed to be the centerpiece of your celebration.
                                 </p>
-                            </div>
+                            </motion.div>
                         </div>
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* Design Process Section - Added */}
             <motion.section

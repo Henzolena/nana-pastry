@@ -14,6 +14,7 @@ import Contact from '@/pages/Contact'
 import RequestCustomDesign from '@/pages/RequestCustomDesign'
 import Cart from '@/pages/Cart'
 import Checkout from '@/pages/Checkout'
+import CakeCustomizationPage from '@/pages/CakeCustomizationPage'
 
 // Context Providers
 import { CartProvider } from '@/contexts/CartContext'
@@ -37,6 +38,9 @@ function App() {
               <Route path="/request-custom-design" element={<RequestCustomDesign />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/checkout/customize" element={<CakeCustomizationPage />} />
+              <Route path="/products/customize/:cakeId" element={<CakeCustomizationPage />} />
+              <Route path="/cart/customize/:cartItemIndex" element={<CakeCustomizationPage />} />
             </Routes>
           </AnimatePresence>
         </main>

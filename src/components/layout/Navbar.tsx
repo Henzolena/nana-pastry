@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { Menu, X, Phone } from 'lucide-react'
+import { Menu, X, Phone, Instagram, Twitter } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { cn } from '@/utils/cn'
 
-import { companyInfo, contactInfo } from '@/utils/data'
+import { companyInfo, contactInfo, socialMediaLinks } from '@/utils/data'
 import CartIcon from '@/components/cart/CartIcon'
 
 const Navbar = () => {
@@ -90,18 +92,38 @@ const Navbar = () => {
             Custom Order
           </NavLink>
           
-          <div className="flex items-center ml-4">
-            <NavLink to="/cart" className="mr-1">
-              <CartIcon />
-            </NavLink>
+          {/* Call Now Button & Socials - Desktop */}
+          <div className="hidden lg:flex items-center space-x-4">
+            {/* Enhanced Call Now Button */}
             <a 
               href={`tel:${contactInfo.phone}`}
-              className="btn btn-primary group"
+              className={cn(
+                'group flex items-center px-4 py-2 rounded-full transition-all duration-300 ease-out',
+                'bg-rosepink/10 border border-rosepink/30 text-rosepink shadow-sm',
+                'hover:bg-rosepink hover:text-white hover:shadow-md hover:scale-105'
+              )}
             >
-              <Phone className="w-4 h-4 mr-2 group-hover:animate-pulse" />
-              Call Now
+              <Phone className={cn(
+                "w-6 h-6 mr-2 text-hotpink transition-colors duration-300",
+                "-rotate-12",
+                "group-hover:text-white group-hover:animate-shake"
+              )} />
+              <span className="text-sm font-medium tracking-wide">
+                {contactInfo.phone}
+              </span>
             </a>
+            {/* Desktop Social Icons - Optional */}
+            {/* <div className="flex space-x-2">
+              {socialMediaLinks.map(link => (
+                <a key={link.platform} href={link.url} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-blush/20">
+                  <SocialIcon platform={link.platform} className="w-5 h-5 text-deepbrown hover:text-hotpink" />
+                </a>
+              ))}
+            </div> */} 
           </div>
+
+          {/* Cart Icon */}
+          <CartIcon />
         </nav>
 
         {/* Mobile Menu and Cart */}
@@ -197,5 +219,14 @@ const Navbar = () => {
     </header>
   )
 }
+
+// Helper function to get social icon (Can be moved to a utils file)
+const SocialIcon = ({ platform, className }: { platform: string, className?: string }) => {
+  switch (platform) {
+    case 'instagram': return <Instagram className={className} />;
+    case 'twitter': return <Twitter className={className} />;
+    default: return null;
+  }
+};
 
 export default Navbar 

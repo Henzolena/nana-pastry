@@ -4,6 +4,7 @@ import OrderSummary, { CartItem } from './OrderSummary';
 
 export enum CheckoutStep {
   CUSTOMER_INFO = 'CUSTOMER_INFO',
+  CAKE_CUSTOMIZATION = 'CAKE_CUSTOMIZATION',
   SHIPPING = 'SHIPPING',
   PAYMENT = 'PAYMENT',
   REVIEW = 'REVIEW',
@@ -43,10 +44,16 @@ export default function CheckoutLayout({
       completed: currentStep !== CheckoutStep.CUSTOMER_INFO,
       current: currentStep === CheckoutStep.CUSTOMER_INFO
     },
+    [CheckoutStep.CAKE_CUSTOMIZATION]: {
+      label: 'Cake Customization',
+      completed: currentStep !== CheckoutStep.CAKE_CUSTOMIZATION,
+      current: currentStep === CheckoutStep.CAKE_CUSTOMIZATION
+    },
     [CheckoutStep.SHIPPING]: {
       label: 'Shipping',
       completed: 
         currentStep !== CheckoutStep.CUSTOMER_INFO && 
+        currentStep !== CheckoutStep.CAKE_CUSTOMIZATION && 
         currentStep !== CheckoutStep.SHIPPING,
       current: currentStep === CheckoutStep.SHIPPING
     },
@@ -69,6 +76,7 @@ export default function CheckoutLayout({
 
   const stepOrder = [
     CheckoutStep.CUSTOMER_INFO,
+    CheckoutStep.CAKE_CUSTOMIZATION,
     CheckoutStep.SHIPPING,
     CheckoutStep.PAYMENT,
     CheckoutStep.REVIEW,
