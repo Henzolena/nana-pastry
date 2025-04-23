@@ -138,6 +138,32 @@ const Footer = () => {
           <p className="mt-4 text-xs max-w-2xl mx-auto">
             <span className="text-hotpink">*</span> The cake images displayed on this website are for inspirational purposes only and may not represent the exact product you will receive.
           </p>
+          
+          {/* Developer Credits */}
+          <div className="mt-8 pt-6 max-w-md mx-auto">
+            <div className="py-3 px-4 bg-gradient-to-r from-blush/5 via-ivory to-blush/5 rounded-full border border-softgold/10 flex justify-center items-center space-x-2 shadow-sm hover:shadow-md hover:border-softgold/20 transition-all duration-300 group">
+              <div className="bg-white/80 p-1 rounded-full group-hover:bg-white group-hover:shadow-sm transition-all duration-300">
+                <svg className="w-3.5 h-3.5 text-hotpink group-hover:text-deepbrown transition-colors duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                  <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                  <path d="M2 2l7.586 7.586"></path>
+                  <circle cx="11" cy="11" r="2"></circle>
+                </svg>
+              </div>
+              <p className="text-xs font-medium tracking-wide group-hover:text-deepbrown transition-colors duration-300">
+                Designed & Developed by{' '}
+                <a 
+                  href="https://gorobale.tech" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-hotpink hover:text-deepbrown transition-colors font-semibold relative inline-block"
+                >
+                  <span className="relative z-10">Go Robale</span>
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-hotpink group-hover:w-full transition-all duration-300"></span>
+                </a>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
