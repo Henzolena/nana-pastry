@@ -29,7 +29,12 @@ const CakeDetailsModal = ({ cake, isOpen, onClose }: CakeDetailsModalProps) => {
 
   // Handle adding to cart
   const handleAddToCart = () => {
-    const size = cake.sizes?.[selectedSize] || { label: 'Standard', servings: 8, priceModifier: 0 };
+    const size = cake.sizes?.[selectedSize] || { 
+      label: 'Standard', 
+      servings: 8, 
+      price: cake.price,
+      priceModifier: 0 
+    };
     addItem(cake, size, quantity);
     setAddedToCart(true);
     

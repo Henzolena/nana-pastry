@@ -3,6 +3,7 @@ export interface Cake {
   name: string;
   category: CakeCategory;
   description: string;
+  price: number;
   images: string[];
   featured: boolean;
   ingredients?: string[];
@@ -28,6 +29,7 @@ export interface CakeSize {
   label: string;
   servings: number;
   price: number;
+  priceModifier?: number;
 }
 
 export interface TestimonialType {
