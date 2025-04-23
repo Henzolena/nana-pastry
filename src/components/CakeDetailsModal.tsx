@@ -103,6 +103,12 @@ const CakeDetailsModal = ({ cake, isOpen, onClose }: CakeDetailsModalProps) => {
               ))}
             </div>
           )}
+          
+          {/* Image Disclaimer */}
+          <div className="mt-3 p-2 bg-blush/10 border border-blush/20 rounded text-xs text-warmgray-600 flex items-start">
+            <Info size={12} className="text-hotpink mr-1.5 mt-0.5 flex-shrink-0" />
+            <p>Images shown are for inspiration only. Actual cake appearance may vary as each is handcrafted to order.</p>
+          </div>
         </div>
 
         {/* Details */}

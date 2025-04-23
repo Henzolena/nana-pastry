@@ -135,6 +135,9 @@ const Footer = () => {
         <div className="text-center text-warmgray-500 text-sm">
           <p>© {currentYear} {companyInfo.name}. All rights reserved.</p>
           <p className="mt-2">Handcrafted with 💕 and premium ingredients</p>
+          <p className="mt-4 text-xs max-w-2xl mx-auto">
+            <span className="text-hotpink">*</span> The cake images displayed on this website are for inspirational purposes only and may not represent the exact product you will receive.
+          </p>
         </div>
       </div>
     </footer>

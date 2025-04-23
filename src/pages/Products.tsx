@@ -218,6 +218,17 @@ const Products = () => {
         className="section bg-pink-gradient"
       >
         <div className="container">
+          {/* Image Disclaimer Notice */}
+          <motion.div 
+            variants={fadeIn}
+            className="bg-white/80 rounded-lg p-4 mb-8 border border-blush/20 shadow-sm"
+          >
+            <div className="flex items-center text-sm text-warmgray-700">
+              <span className="text-hotpink mr-2">※</span>
+              <p>The cake images shown are for inspiration only. Each cake is handcrafted and may vary slightly from the photographs shown.</p>
+            </div>
+          </motion.div>
+
           {selectedCategory === 'custom' && (
             <motion.div 
               variants={fadeIn}

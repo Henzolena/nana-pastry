@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion'
 // Layout components
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import Disclaimer from '@/components/layout/Disclaimer'
 
 // Pages
 import Home from '@/pages/Home'
@@ -25,6 +26,7 @@ function App() {
     <CartProvider>
       <div className="min-h-screen flex flex-col">
         <Navbar />
+        <Disclaimer />
         <main className="flex-grow">
           <AnimatePresence mode="wait">
             <Routes>
