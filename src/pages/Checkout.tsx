@@ -53,6 +53,14 @@ const Checkout: React.FC = () => {
         console.error('Error parsing saved customer info:', error);
       }
     }
+
+    // Check if we should jump to a specific step (e.g., after customization)
+    const savedStep = localStorage.getItem('checkoutStep');
+    if (savedStep) {
+      setCurrentStep(savedStep as CheckoutStep);
+      // Clear the saved step to prevent unwanted jumps on future visits
+      localStorage.removeItem('checkoutStep');
+    }
   }, []);
 
   useEffect(() => {

@@ -205,7 +205,13 @@ export default function CakeCustomizationPage() {
       }
     }
     
-    // Navigate to shipping step in the main checkout flow
+    // Set a flag in localStorage to indicate that customization is complete
+    localStorage.setItem('customizationComplete', 'true');
+    
+    // Set shipping as the next step in localStorage
+    localStorage.setItem('checkoutStep', CheckoutStep.SHIPPING);
+    
+    // Navigate to checkout - it will read the step from localStorage
     navigate('/checkout');
   };
 
