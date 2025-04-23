@@ -1,4 +1,4 @@
-import { Cake, TestimonialType, FaqType, TeamMember, CompanyInfo, AboutSection, ContactInfo, ServiceInfo, BusinessHours, ProcessStep, HomePageContent, SocialLink, PickupInfo, CakeSize } from '@/types';
+import { Cake, TestimonialType, FaqType, TeamMember, CompanyInfo, AboutSection, ContactInfo, ServiceInfo, BusinessHours, ProcessStep, HomePageContent, SocialLink, PickupInfo } from '@/types';
 
 // --- Global Cake Details ---
 export const availableFlavors: string[] = [

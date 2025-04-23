@@ -102,6 +102,20 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       };
     }
     
+    case 'UPDATE_ITEM_CUSTOMIZATIONS': {
+      const { id, customizations } = action.payload;
+      
+      const newItems = safeState.items.map((item) =>
+        item.id === id ? { ...item, customizations } : item
+      );
+      
+      // No need to recalculate subtotal as price doesn't change
+      return {
+        ...safeState,
+        items: newItems,
+      };
+    }
+    
     case 'CLEAR_CART':
       return {
         ...defaultCartState,
@@ -160,6 +174,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'ADD_ITEM', payload: newItem });
   };
 
+  // Add custom item to cart
+  const addCustomItem = (cake: Cake, size: CakeSize, quantity: number, customizations: CartItem['customizations']) => {
+    const newItem: CartItem = {
+      id: uuidv4(),
+      cakeId: cake.id,
+      name: cake.name,
+      price: size.price,
+      quantity,
+      size,
+      image: cake.images[0], // First image as the thumbnail
+      customizations,
+    };
+
+    dispatch({ type: 'ADD_ITEM', payload: newItem });
+  };
+
   // Remove item from cart
   const removeItem = (id: string) => {
     dispatch({ type: 'REMOVE_ITEM', payload: id });
@@ -168,6 +198,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Update item quantity
   const updateQuantity = (id: string, quantity: number) => {
     dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
+  };
+
+  // Update item customizations
+  const updateItemCustomizations = (id: string, customizations: CartItem['customizations']) => {
+    dispatch({ type: 'UPDATE_ITEM_CUSTOMIZATIONS', payload: { id, customizations } });
   };
 
   // Clear cart
@@ -183,8 +218,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value: CartContextType = {
     state,
     addItem,
+    addCustomItem,
     removeItem,
     updateQuantity,
+    updateItemCustomizations,
     clearCart,
     toggleCart,
   };

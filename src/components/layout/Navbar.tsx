@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { Menu, X, Phone, Instagram, Twitter } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Menu, X, Phone } from 'lucide-react'
 import { cn } from '@/utils/cn'
 
-import { companyInfo, contactInfo, socialMediaLinks } from '@/utils/data'
+import { companyInfo, contactInfo } from '@/utils/data'
 import CartIcon from '@/components/cart/CartIcon'
 
 const Navbar = () => {
@@ -219,14 +218,5 @@ const Navbar = () => {
     </header>
   )
 }
-
-// Helper function to get social icon (Can be moved to a utils file)
-const SocialIcon = ({ platform, className }: { platform: string, className?: string }) => {
-  switch (platform) {
-    case 'instagram': return <Instagram className={className} />;
-    case 'twitter': return <Twitter className={className} />;
-    default: return null;
-  }
-};
 
 export default Navbar 

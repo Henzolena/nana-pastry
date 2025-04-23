@@ -174,18 +174,6 @@ const CakeCustomizationForm: React.FC<CakeCustomizationFormProps> = ({
     }
   };
 
-  // Gets the price adjustment string for dietary options
-  const getDietaryPriceAdjustment = (option: string): string => {
-    if (option === 'glutenFree' && dietaryOptions.glutenFree) {
-      return dietaryOptions.glutenFree.priceAdjustment;
-    } else if (option === 'vegan' && dietaryOptions.vegan) {
-      return dietaryOptions.vegan.priceAdjustment;
-    } else if (option === 'sugarFree' && dietaryOptions.sugarFree) {
-      return dietaryOptions.sugarFree.priceAdjustment;
-    }
-    return '';
-  };
-
   // Filter flavors based on dietary option
   const getAvailableFlavors = (): string[] => {
     if (formData.dietaryOption === 'glutenFree' && dietaryOptions.glutenFree) {

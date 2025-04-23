@@ -4,12 +4,13 @@ import CheckoutLayout, { CheckoutStep } from '@/components/checkout/CheckoutLayo
 import CakeCustomizationForm, { CustomizationOptions } from '@/components/checkout/CakeCustomizationForm';
 import { useCart } from '@/contexts/CartContext';
 import { cakes } from '@/utils/data';
+import { CakeSize } from '@/types';
 
 export default function CakeCustomizationPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams<{ cakeId?: string; cartItemIndex?: string }>();
-  const { state: cartState } = useCart();
+  const { state: cartState, addCustomItem, updateItemCustomizations } = useCart();
 
   // Determine if we're customizing a specific cart item or a new cake
   const cartItemIndex = params.cartItemIndex ? parseInt(params.cartItemIndex, 10) : undefined;
@@ -151,14 +152,19 @@ export default function CakeCustomizationPage() {
     setCustomizationOptions(data);
     
     // If we're customizing a specific cart item, update that item
-    if (cartItemIndex !== undefined) {
-      // In a real implementation, you would update the cart item with the new customizations
-      // cartDispatch({ 
-      //   type: 'UPDATE_ITEM_CUSTOMIZATIONS', 
-      //   payload: { index: cartItemIndex, customizations: data } 
-      // });
+    if (cartItemIndex !== undefined && cartItem) {
+      // Make sure selectedCakeId is defined before updating
+      const customizations = {
+        ...data,
+        selectedCakeId: data.selectedCakeId || cartItem.cakeId,
+        dietaryOption: data.dietaryOption || 'standard',
+        specialInstructions: data.specialInstructions || '',
+      };
       
-      // For now, just return to the cart page
+      // Update the existing cart item with new customizations
+      updateItemCustomizations(cartItem.id, customizations);
+      
+      // Return to the cart page
       navigate('/cart');
       return;
     }
@@ -166,9 +172,37 @@ export default function CakeCustomizationPage() {
     // If we came directly from a product page (via params.cakeId), 
     // we need to add this cake to the cart first
     if (params.cakeId) {
-      // This would be handled by your cart context in a real app
-      // cartDispatch({ type: 'ADD_ITEM', payload: { id: params.cakeId, customizations: data } });
-      // For now, we'll just navigate to checkout
+      const cake = cakes.find(c => c.id === params.cakeId);
+      if (cake) {
+        // Find the default size or use the first one
+        let defaultSize: CakeSize;
+        
+        if (cake.sizes && cake.sizes.length > 0) {
+          defaultSize = cake.sizes.find(s => s.label === 'Standard') || cake.sizes[0];
+        } else {
+          // Create a valid CakeSize object if none exists
+          defaultSize = {
+            label: 'Standard',
+            price: cake.price,
+            servings: 10
+          };
+        }
+          
+        // Ensure all required fields are present in customizations
+        const customizations = {
+          selectedCakeId: data.selectedCakeId || cake.id,
+          flavor: data.flavor,
+          filling: data.filling,
+          frosting: data.frosting,
+          shape: data.shape,
+          dietaryOption: data.dietaryOption || 'standard',
+          addons: data.addons,
+          specialInstructions: data.specialInstructions || '',
+        };
+        
+        // Add the custom cake to the cart
+        addCustomItem(cake, defaultSize, 1, customizations);
+      }
     }
     
     // Navigate to shipping step in the main checkout flow
