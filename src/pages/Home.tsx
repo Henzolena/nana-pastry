@@ -62,7 +62,7 @@ const Home = () => {
   };
 
   return (
-    <div className="pt-36">
+    <div className="">
       {/* Add Modal */}
       <CakeDetailsModal 
         cake={selectedCake}
@@ -76,11 +76,17 @@ const Home = () => {
         initial="hidden"
         animate={heroInView ? "visible" : "hidden"}
         variants={fadeIn}
-        className="relative h-screen flex items-center overflow-hidden"
+        className="relative min-h-screen flex items-center overflow-hidden"
         style={{
           backgroundImage: `linear-gradient(to bottom, rgba(245, 221, 233, 0.8), rgba(255, 245, 238, 0.9)), url('${homeContent.hero.backgroundImage}')`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: 'center center',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed',
+          height: '100vh',
+          width: '100%',
+          marginTop: '0',
+          paddingTop: '0'
         } as React.CSSProperties}
       >
         <div className="absolute inset-0 bg-gold-shimmer opacity-50"></div>

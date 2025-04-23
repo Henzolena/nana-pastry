@@ -92,11 +92,17 @@ const Contact = () => {
         initial="hidden"
         animate={heroInView ? "visible" : "hidden"}
         variants={fadeIn}
-        className="relative py-20 md:py-24 overflow-hidden"
+        className="relative min-h-[50vh] flex items-center overflow-hidden"
         style={{
           backgroundImage: `linear-gradient(to right, rgba(255, 192, 203, 0.7), rgba(255, 245, 238, 0.9)), url('/src/assets/images/contact-bg.jpg')`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: 'center center',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed',
+          width: '100%',
+          marginTop: '0',
+          paddingTop: '6rem',
+          paddingBottom: '3rem'
         } as React.CSSProperties}
       >
         <div className="absolute inset-0 bg-gold-shimmer opacity-30"></div>

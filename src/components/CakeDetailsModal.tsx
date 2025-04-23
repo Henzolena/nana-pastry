@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, ShoppingBag, Star, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, ShoppingBag, Star, Info, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { Cake } from '@/types';
 import Modal from './ui/Modal';
+import { useCart } from '@/contexts/CartContext';
+import { formatCurrency } from '@/utils/formatters';
 
 interface CakeDetailsModalProps {
   cake: Cake | null;
@@ -14,6 +16,8 @@ const CakeDetailsModal = ({ cake, isOpen, onClose }: CakeDetailsModalProps) => {
   const [selectedSize, setSelectedSize] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [addedToCart, setAddedToCart] = useState(false);
+  const { addItem, toggleCart } = useCart();
 
   if (!cake) return null;
 
@@ -21,6 +25,18 @@ const CakeDetailsModal = ({ cake, isOpen, onClose }: CakeDetailsModalProps) => {
     const basePrice = cake.price;
     const sizeModifier = cake.sizes?.[selectedSize]?.priceModifier || 0;
     return (basePrice + sizeModifier) * quantity;
+  };
+
+  // Handle adding to cart
+  const handleAddToCart = () => {
+    const size = cake.sizes?.[selectedSize] || { label: 'Standard', servings: 8, priceModifier: 0 };
+    addItem(cake, size, quantity);
+    setAddedToCart(true);
+    
+    // Reset the added state after 1.5 seconds
+    setTimeout(() => {
+      setAddedToCart(false);
+    }, 1500);
   };
 
   // For demo purposes, let's create multiple images
@@ -94,7 +110,7 @@ const CakeDetailsModal = ({ cake, isOpen, onClose }: CakeDetailsModalProps) => {
           {/* Price and Rating */}
           <div className="flex flex-col gap-2">
             <p className="text-2xl font-medium text-deepbrown">
-              ${calculatePrice().toFixed(2)}
+              {formatCurrency(calculatePrice())}
             </p>
             
             <div className="flex items-center">
@@ -197,11 +213,41 @@ const CakeDetailsModal = ({ cake, isOpen, onClose }: CakeDetailsModalProps) => {
           {/* Add to Cart Button */}
           <motion.button
             whileTap={{ scale: 0.98 }}
-            className="w-full py-3.5 px-4 bg-hotpink text-white rounded-md font-medium flex items-center justify-center gap-2 hover:bg-hotpink/90 transition-colors shadow-sm"
+            onClick={handleAddToCart}
+            className={`w-full py-3.5 px-4 ${
+              addedToCart 
+                ? 'bg-green-600 hover:bg-green-700' 
+                : 'bg-hotpink hover:bg-hotpink/90'
+            } text-white rounded-md font-medium flex items-center justify-center gap-2 transition-colors shadow-sm`}
           >
-            <ShoppingBag size={18} />
-            Add to Cart - ${calculatePrice().toFixed(2)}
+            {addedToCart ? (
+              <>
+                <Check size={20} />
+                Added to Cart
+              </>
+            ) : (
+              <>
+                <ShoppingBag size={20} />
+                Add to Cart
+              </>
+            )}
           </motion.button>
+
+          {/* View Cart Button (appears after adding to cart) */}
+          {addedToCart && (
+            <motion.button
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                onClose();
+                toggleCart(true);
+              }}
+              className="w-full py-3 px-4 border border-gray-300 text-gray-700 rounded-md font-medium flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+            >
+              View Cart
+            </motion.button>
+          )}
         </div>
       </div>
     </Modal>

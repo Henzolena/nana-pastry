@@ -104,18 +104,24 @@ const RequestCustomDesign = () => {
         }, 1000);
     };
     return (
-        <div className="pt-16">
+        <div className="">
             {/* Header Section */}
             <motion.section
                 ref={headerRef}
                 initial="hidden"
                 animate={headerInView ? "visible" : "hidden"}
                 variants={fadeIn}
-                className="relative py-24 md:py-28"
+                className="relative min-h-[50vh] flex items-center overflow-hidden"
                 style={{
                     backgroundImage: "linear-gradient(to bottom, rgba(245, 221, 233, 0.8), rgba(255, 245, 238, 0.9)), url('/src/assets/images/hero-bg.jpg')",
                     backgroundSize: 'cover',
-                    backgroundPosition: 'center',
+                    backgroundPosition: 'center center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundAttachment: 'fixed',
+                    width: '100%',
+                    marginTop: '0',
+                    paddingTop: '6rem',
+                    paddingBottom: '3rem'
                 } as React.CSSProperties}
             >
                 <div className="absolute inset-0 bg-gold-shimmer opacity-20"></div>
@@ -140,6 +146,29 @@ const RequestCustomDesign = () => {
                     </motion.p>
                 </div>
             </motion.section>
+
+            {/* Decorative Image Section - NEW */}
+            <section className="py-12 bg-white">
+                <div className="container max-w-6xl">
+                    <div className="relative rounded-2xl overflow-hidden shadow-soft-pink border border-blush/20">
+                        <div className="absolute inset-0 bg-gradient-to-r from-hotpink/40 to-transparent z-10"></div>
+                        <img 
+                            src="/src/assets/images/custom-cake-banner.jpg" 
+                            alt="Custom cake creation process" 
+                            className="w-full h-[400px] object-cover"
+                        />
+                        <div className="absolute top-1/2 left-12 transform -translate-y-1/2 z-20 max-w-md">
+                            <div className="bg-white/80 backdrop-blur-sm p-6 md:p-8 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-heading text-deepbrown mb-3">Your Dream, Our Expertise</h3>
+                                <p className="text-warmgray-700">
+                                    From sketch to slice, we bring your vision to life with precision and artistry. 
+                                    Our custom cakes are designed to be the centerpiece of your celebration.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             {/* Design Process Section - Added */}
             <motion.section

@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { Menu, X, Phone } from 'lucide-react'
 
 import { companyInfo, contactInfo } from '@/utils/data'
+import CartIcon from '@/components/cart/CartIcon'
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -89,23 +90,33 @@ const Navbar = () => {
             Custom Order
           </NavLink>
           
-          <a 
-            href={`tel:${contactInfo.phone}`}
-            className="btn btn-primary ml-4 group"
-          >
-            <Phone className="w-4 h-4 mr-2 group-hover:animate-pulse" />
-            Call Now
-          </a>
+          <div className="flex items-center ml-4">
+            <NavLink to="/cart" className="mr-1">
+              <CartIcon />
+            </NavLink>
+            <a 
+              href={`tel:${contactInfo.phone}`}
+              className="btn btn-primary group"
+            >
+              <Phone className="w-4 h-4 mr-2 group-hover:animate-pulse" />
+              Call Now
+            </a>
+          </div>
         </nav>
 
-        {/* Mobile Menu Button */}
-        <button
-          className="md:hidden text-deepbrown hover:text-hotpink"
-          onClick={toggleMenu}
-          aria-label="Toggle menu"
-        >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        {/* Mobile Menu and Cart */}
+        <div className="md:hidden flex items-center">
+          <NavLink to="/cart" className="mr-2">
+            <CartIcon />
+          </NavLink>
+          <button
+            className="text-deepbrown hover:text-hotpink"
+            onClick={toggleMenu}
+            aria-label="Toggle menu"
+          >
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Navigation */}
@@ -156,6 +167,20 @@ const Navbar = () => {
               onClick={() => setIsOpen(false)}
             >
               Custom Order
+            </NavLink>
+            <NavLink 
+              to="/cart" 
+              className={({ isActive }) => 
+                `text-lg py-2 ${isActive ? 'text-hotpink font-medium' : 'text-deepbrown'} flex items-center`
+              }
+              onClick={() => setIsOpen(false)}
+            >
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+              </svg>
+              Cart
             </NavLink>
             
             <a 
