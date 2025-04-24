@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/utils/cn';
+import { useAuth } from '@/contexts/AuthContext';
+import { getUserProfile } from '@/services/userService';
+import type { UserProfile } from '@/services/userService';
 
 export interface CustomerInfo {
   firstName: string;
@@ -23,8 +26,56 @@ const defaultFormData: CustomerInfo = {
 };
 
 const CustomerInfoForm: React.FC<CustomerInfoFormProps> = ({ initialData, onSubmit }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<CustomerInfo>(initialData || defaultFormData);
   const [errors, setErrors] = useState<Partial<Record<keyof CustomerInfo, string>>>({});
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  // Fetch user profile data when component mounts if user is logged in
+  useEffect(() => {
+    async function fetchUserProfile() {
+      if (!user) return;
+      
+      try {
+        setLoadingProfile(true);
+        const userProfileData = await getUserProfile(user.uid);
+        
+        if (userProfileData) {
+          // If we have profile data, update the form
+          let firstName = '';
+          let lastName = '';
+          
+          // Handle case where displayName might be in "First Last" format
+          if (userProfileData.displayName) {
+            const nameParts = userProfileData.displayName.split(' ');
+            firstName = nameParts[0] || '';
+            lastName = nameParts.slice(1).join(' ') || '';
+          } else if (user.displayName) {
+            const nameParts = user.displayName.split(' ');
+            firstName = nameParts[0] || '';
+            lastName = nameParts.slice(1).join(' ') || '';
+          }
+          
+          setFormData(prevData => ({
+            ...prevData,
+            firstName: prevData.firstName || firstName,
+            lastName: prevData.lastName || lastName,
+            email: prevData.email || userProfileData.email || user.email || '',
+            phone: prevData.phone || userProfileData.phone || '',
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching user profile:', err);
+      } finally {
+        setLoadingProfile(false);
+      }
+    }
+    
+    // Only fetch if user is logged in and we don't already have initial data
+    if (user && !initialData) {
+      fetchUserProfile();
+    }
+  }, [user, initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;

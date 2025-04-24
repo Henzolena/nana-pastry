@@ -1,17 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle, ShoppingBag, Calendar, Home } from 'lucide-react';
+import { CheckCircle, ShoppingBag, Calendar, Home, AlertTriangle } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/utils/formatters';
 import { CustomerInfo } from './CustomerInfoForm';
 import { DeliveryInfo } from './DeliveryOptionsForm';
 import { PaymentInfo } from './PaymentMethod';
+import { createNewOrder, cartItemsToOrderItems, OrderData, OrderStatus, PaymentStatus, calculateEstimatedDate } from '@/services/order';
+import { getUserProfile } from '@/services/userService';
+import { useNavigate, useLocation } from 'react-router-dom';
+import type { UserProfile } from '@/services/userService';
+import type { Order } from '@/services/order';
+import { Timestamp } from 'firebase/firestore';
 
 interface OrderConfirmationProps {
   customerInfo: CustomerInfo;
   deliveryInfo: DeliveryInfo;
   paymentInfo: PaymentInfo;
   orderId: string;
+}
+
+function generateIdempotencyKey(): string {
+  return `order_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
 }
 
 const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
@@ -21,27 +32,64 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
   orderId,
 }) => {
   const { state: cartState, clearCart } = useCart();
+  const { user } = useAuth();
+  const [isOrderSaved, setIsOrderSaved] = useState(false);
+  const [orderSaveError, setOrderSaveError] = useState<string | null>(null);
+  const [firestoreOrderId, setFirestoreOrderId] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Format the pickup date or provide delivery info
   const getDeliveryOrPickupDate = (): string => {
     if (deliveryInfo.method === 'pickup' && deliveryInfo.pickupDate) {
       try {
-        const date = new Date(deliveryInfo.pickupDate + 'T00:00:00');
-        if (isNaN(date.getTime())) return 'Invalid Date Selected';
+        // Create a Date object with timezone handling
+        const dateString = deliveryInfo.pickupDate + 'T00:00:00';
+        const date = new Date(dateString);
+        
+        // Validate the date
+        if (isNaN(date.getTime())) {
+          console.error('Invalid date from string:', dateString);
+          return 'Scheduled pickup (date to be confirmed)';
+        }
+        
         return date.toLocaleDateString('en-US', {
           weekday: 'long',
           year: 'numeric',
           month: 'long',
           day: 'numeric',
         });
-      } catch {
-        return 'Invalid Date Format';
+      } catch (error) {
+        console.error('Error formatting pickup date:', error);
+        return 'Scheduled pickup (date to be confirmed)';
+      }
+    } else if (deliveryInfo.method === 'delivery' && deliveryInfo.deliveryDate) {
+      try {
+        // Create a Date object with timezone handling
+        const dateString = deliveryInfo.deliveryDate + 'T00:00:00';
+        const date = new Date(dateString);
+        
+        // Validate the date
+        if (isNaN(date.getTime())) {
+          console.error('Invalid date from string:', dateString);
+          return 'Scheduled delivery (date to be confirmed)';
+        }
+        
+        return date.toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+      } catch (error) {
+        console.error('Error formatting delivery date:', error);
+        return 'Scheduled delivery (date to be confirmed)';
       }
     } else if (deliveryInfo.method === 'delivery') {
-      // Placeholder for delivery date - could be calculated or fetched
+      // Fallback if no delivery date specified
       return 'Delivery arranged (Est. 2-3 business days)'; 
     }
-    return 'Date not specified';
+    return 'Date to be confirmed';
   };
 
   // Get pickup time slot
@@ -49,10 +97,109 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
     return deliveryInfo.method === 'pickup' ? (deliveryInfo.pickupTime || 'Time not selected') : 'N/A';
   };
 
-  // Clear cart after successful order (this would be moved to after payment processing in a real implementation)
-  React.useEffect(() => {
-    clearCart();
-  }, [clearCart]);
+  // Get delivery time slot
+  const getDeliveryTime = (): string => {
+    return deliveryInfo.method === 'delivery' ? (deliveryInfo.deliveryTime || 'Time not selected') : 'N/A';
+  };
+
+  // Convert cart items to order items
+  const orderItems = useMemo(() => {
+    return cartState.items.map(item => ({
+      cakeId: item.id || "",  // Provide default empty string
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      imageUrl: item.image,
+      customizations: item.customizations || {}
+    }));
+  }, [cartState.items]);
+
+  // Save the order to Firestore when component mounts
+  useEffect(() => {
+    let isMounted = true;
+    // Use a ref to track if we've already started the order process in this session
+    const isProcessingRef = { current: false };
+    
+    const saveOrder = async () => {
+      if (!user || !cartState.items.length) return;
+
+      isProcessingRef.current = true;
+      setOrderSaveError(null);
+
+      try {
+        // Create order data with proper types
+        const orderData: OrderData = {
+          userId: user?.uid || "",
+          items: orderItems,
+          subtotal: cartState.subtotal,
+          tax: cartState.tax,
+          total: cartState.total,
+          status: 'pending',
+          paymentStatus: 'pending',
+          paymentMethod: paymentInfo.method || "",
+          deliveryMethod: deliveryInfo.method || "pickup",
+          customerInfo: {
+            name: user?.displayName || `${customerInfo.firstName} ${customerInfo.lastName}` || "",
+            email: user?.email || customerInfo.email || "",
+            phone: customerInfo.phone || ""
+          },
+          isCustomOrder: cartState.items.some(item => item.customizations && Object.keys(item.customizations).length > 0),
+          ...(deliveryInfo.method === 'delivery' && {
+            deliveryInfo: {
+              address: deliveryInfo.address || "",
+              city: deliveryInfo.city || "",
+              state: deliveryInfo.state || "",
+              zipCode: deliveryInfo.zipCode || "",
+              deliveryDate: deliveryInfo.deliveryDate ? new Date(deliveryInfo.deliveryDate) : new Date(),
+              deliveryTime: deliveryInfo.deliveryTime || "12:00 PM",
+              deliveryFee: 10 // Default delivery fee
+            }
+          }),
+          ...(deliveryInfo.method === 'pickup' && {
+            pickupInfo: {
+              pickupDate: deliveryInfo.pickupDate ? new Date(deliveryInfo.pickupDate) : new Date(),
+              pickupTime: deliveryInfo.pickupTime || "12:00 PM",
+              storeLocation: "Main Store"
+            }
+          }),
+          idempotencyKey: generateIdempotencyKey()
+        };
+        
+        // Save order to Firestore
+        console.log('Saving order to Firestore...');
+        const savedOrderId = await createNewOrder(orderData);
+        console.log('Order saved successfully with ID:', savedOrderId);
+        
+        if (isMounted) {
+          setFirestoreOrderId(savedOrderId);
+          clearCart(); // Clear cart after successful order
+          setIsOrderSaved(true);
+        }
+      } catch (err: any) {
+        console.error('Error saving order:', err);
+        if (isMounted) {
+          setOrderSaveError(err.message || 'Failed to process your order. Please try again.');
+          setIsOrderSaved(false);
+          setFirestoreOrderId(null);
+          isProcessingRef.current = false; // Reset processing flag on error to allow retry
+        }
+      } finally {
+        // Even if there was an error, we don't want to try again automatically
+        if (isMounted) {
+          setIsOrderSaved(true);
+        }
+      }
+    };
+    
+    // Only try to save the order if it hasn't been saved yet
+    if (!isOrderSaved) {
+      saveOrder();
+    }
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [cartState.items, clearCart, user, isOrderSaved, paymentInfo, deliveryInfo]);
 
   return (
     <div className="max-w-2xl mx-auto text-center">
@@ -64,6 +211,18 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
         <p className="mt-1 text-sm text-gray-500">
           We've received your order and will begin processing it right away.
         </p>
+        {firestoreOrderId && (
+          <p className="mt-2 font-medium">
+            Your order reference: <span className="text-hotpink">{firestoreOrderId}</span>
+          </p>
+        )}
+        
+        {orderSaveError && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-md flex items-center text-left">
+            <AlertTriangle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+            <p className="text-sm text-red-700">{orderSaveError}</p>
+          </div>
+        )}
       </div>
 
       {/* Order Details */}
@@ -78,8 +237,8 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-1">Order Number</h4>
-              <p className="font-medium">{orderId}</p>
+              <h4 className="text-sm font-medium text-gray-500 mb-1">Order Reference</h4>
+              <p className="font-medium">{firestoreOrderId || orderId}</p>
             </div>
             <div>
               <h4 className="text-sm font-medium text-gray-500 mb-1">Payment Method</h4>
@@ -125,20 +284,24 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
         </div>
         
         <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-1">
-                {deliveryInfo.method === 'delivery' ? 'Estimated Delivery' : 'Pickup'} Date & Time
-              </h4>
-              <p>{getDeliveryOrPickupDate()}</p>
-              {deliveryInfo.method === 'pickup' && <p>{getPickupTime()}</p>}
-            </div>
-            
-            {deliveryInfo.method === 'delivery' && deliveryInfo.address && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-1">Delivery Address</h4>
-                <p>{deliveryInfo.address}</p>
-                <p>{deliveryInfo.city}, {deliveryInfo.state} {deliveryInfo.zipCode}</p>
+          <div className="p-6 border rounded-lg mb-6">
+            <h3 className="text-xl font-semibold mb-4">
+              {deliveryInfo.method === 'delivery' ? 'Delivery' : 'Pickup'} Information
+            </h3>
+            {deliveryInfo.method === 'delivery' ? (
+              <div className="space-y-2">
+                <p><span className="font-medium">Address:</span> {deliveryInfo.address}</p>
+                <p><span className="font-medium">City:</span> {deliveryInfo.city}</p>
+                <p><span className="font-medium">State:</span> {deliveryInfo.state}</p>
+                <p><span className="font-medium">Zip Code:</span> {deliveryInfo.zipCode}</p>
+                <p><span className="font-medium">Delivery Date:</span> {getDeliveryOrPickupDate()}</p>
+                <p><span className="font-medium">Delivery Time:</span> {deliveryInfo.deliveryTime || '12:00 PM'}</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p><span className="font-medium">Pickup Date:</span> {getDeliveryOrPickupDate()}</p>
+                <p><span className="font-medium">Pickup Time:</span> {getPickupTime()}</p>
+                <p><span className="font-medium">Location:</span> Main Store</p>
               </div>
             )}
           </div>
@@ -151,6 +314,22 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
           )}
         </div>
       </div>
+
+      {/* Account Info if not logged in */}
+      {!user && (
+        <div className="mt-8 p-4 bg-blue-50 border border-blue-100 rounded-md text-left mb-6">
+          <h3 className="text-sm font-medium text-blue-800 mb-2">Create an account to track your orders</h3>
+          <p className="text-sm text-blue-700 mb-3">
+            Sign up now to easily track your orders, save your favorite cakes, and get personalized recommendations.
+          </p>
+          <Link 
+            to="/auth?redirect=/account?tab=orders" 
+            className="inline-flex items-center text-sm font-medium text-blue-700 hover:text-blue-800"
+          >
+            Create Account or Sign In <span aria-hidden="true" className="ml-1">→</span>
+          </Link>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="mt-8 space-y-4">

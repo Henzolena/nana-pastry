@@ -15,39 +15,49 @@ import RequestCustomDesign from '@/pages/RequestCustomDesign'
 import Cart from '@/pages/Cart'
 import Checkout from '@/pages/Checkout'
 import CakeCustomizationPage from '@/pages/CakeCustomizationPage'
+import Auth from '@/pages/Auth'
+import Account from '@/pages/Account'
+import OrderDetail from '@/pages/OrderDetail'
 
 // Context Providers
 import { CartProvider } from '@/contexts/CartContext'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 // Components
 import MiniCart from '@/components/cart/MiniCart'
 
 function App() {
   return (
-    <CartProvider>
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <Disclaimer />
-        <main className="flex-grow">
-          <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/request-custom-design" element={<RequestCustomDesign />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/checkout/customize" element={<CakeCustomizationPage />} />
-              <Route path="/products/customize/:cakeId" element={<CakeCustomizationPage />} />
-              <Route path="/cart/customize/:cartItemIndex" element={<CakeCustomizationPage />} />
-            </Routes>
-          </AnimatePresence>
-        </main>
-        <Footer />
-        <MiniCart />
-      </div>
-    </CartProvider>
+    <AuthProvider>
+      <CartProvider>
+        <div className="min-h-screen flex flex-col">
+          <Navbar />
+          <Disclaimer />
+          <main className="flex-grow">
+            <AnimatePresence mode="wait">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/request-custom-design" element={<RequestCustomDesign />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/checkout/customize" element={<CakeCustomizationPage />} />
+                <Route path="/products/customize/:cakeId" element={<CakeCustomizationPage />} />
+                <Route path="/cart/customize/:cartItemIndex" element={<CakeCustomizationPage />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/account" element={<Account />} />
+                <Route path="/profile" element={<Account />} />
+                <Route path="/orders/:orderId" element={<OrderDetail />} />
+              </Routes>
+            </AnimatePresence>
+          </main>
+          <Footer />
+          <MiniCart />
+        </div>
+      </CartProvider>
+    </AuthProvider>
   )
 }
 

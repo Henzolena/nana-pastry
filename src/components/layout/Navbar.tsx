@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { Menu, X, Phone } from 'lucide-react'
+import { Menu, X, Phone, User } from 'lucide-react'
 import { cn } from '@/utils/cn'
 
 import { companyInfo, contactInfo } from '@/utils/data'
 import CartIcon from '@/components/cart/CartIcon'
+import { useAuth } from '@/contexts/AuthContext'
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const { user } = useAuth()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -123,6 +125,29 @@ const Navbar = () => {
 
           {/* Cart Icon */}
           <CartIcon />
+
+          {/* Login/Profile Links */}
+          {user ? (
+            <NavLink 
+              to="/profile" 
+              className={({ isActive }) => 
+                `nav-link flex items-center ${isActive ? 'text-hotpink after:w-full' : ''}`
+              }
+            >
+              <User className="w-4 h-4 mr-1" />
+              Profile
+            </NavLink>
+          ) : (
+            <NavLink 
+              to="/auth" 
+              className={({ isActive }) => 
+                `nav-link px-4 py-2 rounded-full ${isActive ? 'bg-hotpink text-white' : 'bg-rosepink/20 text-deepbrown hover:bg-rosepink/30'}`
+              }
+            >
+              <User className="w-4 h-4 mr-1 inline" />
+              Login
+            </NavLink>
+          )}
         </nav>
 
         {/* Mobile Menu and Cart */}
@@ -203,6 +228,31 @@ const Navbar = () => {
               </svg>
               Cart
             </NavLink>
+            
+            {/* Login/Profile Link */}
+            {user ? (
+              <NavLink 
+                to="/profile" 
+                className={({ isActive }) => 
+                  `text-lg px-4 py-2 rounded-full ${isActive ? 'bg-hotpink text-white' : 'bg-rosepink/20 text-deepbrown'} flex items-center`
+                }
+                onClick={() => setIsOpen(false)}
+              >
+                <User className="w-5 h-5 mr-2" />
+                Profile
+              </NavLink>
+            ) : (
+              <NavLink 
+                to="/auth" 
+                className={({ isActive }) => 
+                  `text-lg px-4 py-2 rounded-full ${isActive ? 'bg-hotpink text-white' : 'bg-rosepink/20 text-deepbrown'} flex items-center`
+                }
+                onClick={() => setIsOpen(false)}
+              >
+                <User className="w-5 h-5 mr-2" />
+                Login
+              </NavLink>
+            )}
             
             <a 
               href={`tel:${contactInfo.phone}`}

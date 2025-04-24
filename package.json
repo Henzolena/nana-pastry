@@ -19,6 +19,7 @@
     "@types/uuid": "^10.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "firebase": "^11.6.0",
     "framer-motion": "^10.18.0",
     "lucide-react": "^0.303.0",
     "react": "^18.2.0",
