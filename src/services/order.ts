@@ -95,26 +95,42 @@ export type Order = OrderData & FirestoreDocument;
  */
 export const createNewOrder = async (orderData: OrderData): Promise<string> => {
   try {
-    // Check for idempotency key to prevent duplicate orders
-    if (orderData.idempotencyKey) {
-      // Try to find existing order with the same idempotency key
-      try {
-        const existingOrders = await getDocuments<Order>(
+    // Enforce idempotency key
+    if (!orderData.idempotencyKey) {
+      // Fallback idempotency key if none provided
+      orderData.idempotencyKey = `order_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+      console.log(`No idempotency key provided, generated: ${orderData.idempotencyKey}`);
+    }
+
+    // Try to find existing order with this idempotency key (most likely a duplicate submission)
+    try {
+      // First try to find with both idempotency key AND user ID
+      let existingOrders: Order[] = [];
+      
+      if (orderData.userId) {
+        existingOrders = await getDocuments<Order>(
           COLLECTION_NAME,
           where('idempotencyKey', '==', orderData.idempotencyKey),
-          where('userId', '==', orderData.userId || '')
+          where('userId', '==', orderData.userId)
         );
-        
-        // If we found an existing order with this idempotency key, return its ID instead of creating a new one
-        if (existingOrders && existingOrders.length > 0) {
-          console.log(`Found existing order with idempotency key ${orderData.idempotencyKey}, returning existing ID: ${existingOrders[0].id}`);
-          return existingOrders[0].id;
-        }
-      } catch (err) {
-        // If the query fails, log the error but continue to create a new order
-        // This is a safeguard mechanism, not a critical failure point
-        console.warn('Error checking for existing order with idempotency key:', err);
       }
+      
+      // If no match with user ID or no user ID provided, try with just the idempotency key
+      if (existingOrders.length === 0) {
+        existingOrders = await getDocuments<Order>(
+          COLLECTION_NAME,
+          where('idempotencyKey', '==', orderData.idempotencyKey)
+        );
+      }
+      
+      // If we found a matching order, return its ID instead of creating a duplicate
+      if (existingOrders.length > 0) {
+        console.log(`Found existing order with idempotency key ${orderData.idempotencyKey}, returning ID: ${existingOrders[0].id}`);
+        return existingOrders[0].id;
+      }
+    } catch (err) {
+      // If the lookup fails, log but continue with order creation
+      console.warn('Error checking for existing order:', err);
     }
     
     // Make a clean copy for Firestore (no undefined values)
@@ -128,6 +144,7 @@ export const createNewOrder = async (orderData: OrderData): Promise<string> => {
     // Add creation timestamp
     cleanOrderData.createdAt = new Date();
     
+    // Create new order
     const orderId = await addDocument(COLLECTION_NAME, cleanOrderData);
     
     // If user is logged in, update their profile stats
@@ -160,7 +177,14 @@ export const createNewOrder = async (orderData: OrderData): Promise<string> => {
  */
 function removeUndefinedValues(obj: any): any {
   if (obj === undefined) return null;
-  if (obj === null || typeof obj !== 'object') return obj;
+  if (obj === null) return null;
+  
+  // Handle Date and Timestamp objects
+  if (obj instanceof Date) return obj;
+  if (obj && typeof obj === 'object' && obj.toDate && typeof obj.toDate === 'function') return obj;
+  
+  // Handle other non-object types
+  if (typeof obj !== 'object') return obj;
   
   if (Array.isArray(obj)) {
     return obj.map(removeUndefinedValues).filter(item => item !== undefined);

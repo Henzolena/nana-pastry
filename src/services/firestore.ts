@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Cake, CakeCategory } from '../types';
+import { cakes as localCakes } from '../utils/data';
 
 // Firestore collection names
 const COLLECTIONS = {
@@ -171,6 +172,7 @@ export const addCake = async (cake: Omit<Cake, 'id'>): Promise<string> => {
  */
 export const getCakeById = async (cakeId: string): Promise<Cake | null> => {
   try {
+    // Try to fetch from Firestore first
     const cakeRef = doc(db, COLLECTIONS.CAKES, cakeId);
     const cakeDoc = await getDoc(cakeRef);
     
@@ -178,9 +180,31 @@ export const getCakeById = async (cakeId: string): Promise<Cake | null> => {
       return { id: cakeDoc.id, ...cakeDoc.data() } as Cake;
     }
     
+    // If not found in Firestore, try to get from local data
+    const localCake = localCakes.find(cake => cake.id === cakeId);
+    
+    if (localCake) {
+      console.log(`Cake ${cakeId} found in local data`);
+      return localCake;
+    }
+    
+    console.log(`Cake ${cakeId} not found in Firestore or local data`);
     return null;
   } catch (error) {
     console.error('Error getting cake:', error);
+    
+    // Attempt to fallback to local data in case of error
+    try {
+      const localCake = localCakes.find(cake => cake.id === cakeId);
+      
+      if (localCake) {
+        console.log(`Cake ${cakeId} found in local data after Firestore error`);
+        return localCake;
+      }
+    } catch (localError) {
+      console.error('Error getting cake from local data:', localError);
+    }
+    
     throw error;
   }
 };

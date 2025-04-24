@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { cakes } from '@/utils/data';
 import { Cake, CakeCategory } from '@/types';
 import CakeDetailsModal from '@/components/CakeDetailsModal';
+import FavoriteButton from '@/components/FavoriteButton';
 
 // Animation variants
 const fadeIn = {
@@ -281,6 +282,15 @@ const Products = () => {
                             {cake.description}
                           </p>
                         </div>
+                      </div>
+                      
+                      {/* Add Favorite button */}
+                      <div className="absolute top-2 right-2 z-10">
+                        <FavoriteButton 
+                          productId={cake.id}
+                          size="sm"
+                          className="bg-white/80 hover:bg-white shadow-sm"
+                        />
                       </div>
                     </div>
                     

@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Heart, ShoppingBag, Star, Info, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ShoppingBag, Star, Info, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { Cake } from '@/types';
 import Modal from './ui/Modal';
 import { useCart } from '@/contexts/CartContext';
 import { formatCurrency } from '@/utils/formatters';
+import { toast } from 'sonner';
+import FavoriteButton from './FavoriteButton';
 
 interface CakeDetailsModalProps {
   cake: Cake | null;
@@ -13,48 +15,61 @@ interface CakeDetailsModalProps {
 }
 
 const CakeDetailsModal = ({ cake, isOpen, onClose }: CakeDetailsModalProps) => {
-  const [selectedSize, setSelectedSize] = useState(0);
+  const { addItem, toggleCart } = useCart();
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState(0);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
-  const { addItem, toggleCart } = useCart();
-
+  
+  // Reset state when modal is opened with a new cake
+  useEffect(() => {
+    if (isOpen) {
+      setQuantity(1);
+      setSelectedSize(0);
+      setActiveImageIndex(0);
+      setAddedToCart(false);
+    }
+  }, [isOpen]);
+  
+  // Early return if no cake
   if (!cake) return null;
-
+  
+  const images = cake.images || [];
+  
+  // Calculate current price based on selected size
   const calculatePrice = () => {
-    const basePrice = cake.price;
-    const sizeModifier = cake.sizes?.[selectedSize]?.priceModifier || 0;
-    return (basePrice + sizeModifier) * quantity;
+    if (cake.sizes && cake.sizes.length > 0) {
+      return cake.sizes[selectedSize].price;
+    }
+    return cake.price;
   };
-
-  // Handle adding to cart
+  
   const handleAddToCart = () => {
-    const size = cake.sizes?.[selectedSize] || { 
-      label: 'Standard', 
-      servings: 8, 
-      price: cake.price,
-      priceModifier: 0 
-    };
-    addItem(cake, size, quantity);
-    setAddedToCart(true);
+    const size = cake.sizes && cake.sizes.length > 0 
+      ? cake.sizes[selectedSize]
+      : { 
+          label: 'Standard', 
+          servings: 8, 
+          price: cake.price 
+        };
     
-    // Reset the added state after 1.5 seconds
+    addItem(cake, size, quantity);
+    
+    setAddedToCart(true);
+    toast.success('Added to cart!');
+    
+    // Reset after 1.5 seconds
     setTimeout(() => {
       setAddedToCart(false);
     }, 1500);
   };
-
-  // For demo purposes, let's create multiple images
-  const images = cake.images.length > 1 
-    ? cake.images 
-    : [cake.images[0], '/src/assets/images/cake-slice.jpg', '/src/assets/images/cake-top.jpg'];
-
+  
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={cake.name}>
       <div className="grid md:grid-cols-2 gap-8">
         {/* Image Gallery */}
-        <div className="space-y-4">
-          <div className="relative overflow-hidden rounded-lg bg-pink-50 aspect-square">
+        <div>
+          <div className="relative overflow-hidden rounded-xl h-80">
             <img 
               src={images[activeImageIndex]} 
               alt={cake.name}
@@ -80,13 +95,12 @@ const CakeDetailsModal = ({ cake, isOpen, onClose }: CakeDetailsModalProps) => {
             )}
             
             {/* Favorite Button */}
-            <div className="absolute top-4 right-4">
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                className="p-2 bg-white rounded-full shadow-md text-gray-500 hover:text-rosepink transition-colors"
-              >
-                <Heart size={18} />
-              </motion.button>
+            <div className="absolute top-4 right-4 z-10">
+              <FavoriteButton 
+                productId={cake.id} 
+                size="md" 
+                className="bg-white shadow-md"
+              />
             </div>
           </div>
           

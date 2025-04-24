@@ -280,7 +280,40 @@ const DeliveryOptionsForm: React.FC<DeliveryOptionsFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
+      // Ensure we have all required fields based on the method
+      const updatedFormData = { ...formData };
+      
+      // If delivery method is 'delivery', make sure delivery fields are populated
+      if (updatedFormData.method === 'delivery') {
+        // Make sure we have a deliveryDate
+        if (!updatedFormData.deliveryDate) {
+          const today = new Date();
+          // Format as YYYY-MM-DD
+          updatedFormData.deliveryDate = today.toISOString().split('T')[0];
+        }
+        
+        // Make sure we have a deliveryTime
+        if (!updatedFormData.deliveryTime) {
+          updatedFormData.deliveryTime = deliveryTimeSlots[0];
+        }
+      } 
+      // If method is 'pickup', make sure pickup fields are populated
+      else if (updatedFormData.method === 'pickup') {
+        // Make sure we have a pickupDate
+        if (!updatedFormData.pickupDate) {
+          const today = new Date();
+          // Format as YYYY-MM-DD
+          updatedFormData.pickupDate = today.toISOString().split('T')[0];
+        }
+        
+        // Make sure we have a pickupTime
+        if (!updatedFormData.pickupTime) {
+          updatedFormData.pickupTime = timeSlots[0];
+        }
+      }
+      
+      console.log("DeliveryOptionsForm submitting updated data:", updatedFormData);
+      onSubmit(updatedFormData);
     }
   };
 

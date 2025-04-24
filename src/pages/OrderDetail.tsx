@@ -45,11 +45,40 @@ const OrderDetail: React.FC = () => {
     if (!timestamp) return 'Date unavailable';
     
     try {
-      // Check if timestamp is a Date object, a Firestore Timestamp, or can be converted to Date
-      const date = timestamp instanceof Date ? timestamp : 
-                  (timestamp.toDate ? timestamp.toDate() : new Date(timestamp));
+      let dateObject: Date | null = null;
       
-      return date.toLocaleDateString('en-US', {
+      // Case 1: Firestore Timestamp object with toDate method
+      if (timestamp && typeof timestamp.toDate === 'function') {
+        dateObject = timestamp.toDate();
+      }
+      // Case 2: Already a Date object
+      else if (timestamp instanceof Date) {
+        dateObject = timestamp;
+      }
+      // Case 3: String date
+      else if (typeof timestamp === 'string') {
+        dateObject = new Date(timestamp);
+      }
+      // Case 4: Timestamp number (milliseconds since epoch)
+      else if (typeof timestamp === 'number') {
+        dateObject = new Date(timestamp);
+      }
+      // Case 5: Object with seconds property (Firestore server timestamp format)
+      else if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp) {
+        // Convert seconds to milliseconds
+        const milliseconds = timestamp.seconds * 1000;
+        // Add nanoseconds if available
+        dateObject = new Date(milliseconds + (timestamp.nanoseconds ? timestamp.nanoseconds / 1000000 : 0));
+      }
+      
+      // Validate the date object
+      if (!dateObject || isNaN(dateObject.getTime())) {
+        console.warn('Invalid date created from:', timestamp);
+        return 'Invalid date';
+      }
+      
+      // Format the date
+      return dateObject.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
@@ -242,22 +271,16 @@ const OrderDetail: React.FC = () => {
                   
                   {order.deliveryMethod === 'pickup' && order.pickupInfo && (
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-500">Date</p>
-                          <p className="font-medium">{formatDate(order.pickupInfo.pickupDate)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Time</p>
-                          <p className="font-medium">{order.pickupInfo.pickupTime || 'Not specified'}</p>
-                        </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Pickup Details</p>
+                        <p className="font-medium">
+                          {order.pickupInfo.storeLocation || 'Main Store'}
+                        </p>
+                        <p className="font-medium">
+                          {order.pickupInfo.pickupDate ? formatDate(order.pickupInfo.pickupDate) : 'Date not specified'} 
+                          {order.pickupInfo.pickupTime && ` (${order.pickupInfo.pickupTime})`}
+                        </p>
                       </div>
-                      {order.pickupInfo.storeLocation && (
-                        <div className="mt-4">
-                          <p className="text-sm text-gray-500">Location</p>
-                          <p className="font-medium">{order.pickupInfo.storeLocation}</p>
-                        </div>
-                      )}
                     </div>
                   )}
                   
@@ -273,7 +296,8 @@ const OrderDetail: React.FC = () => {
                       <div>
                         <p className="text-sm text-gray-500">Estimated Delivery</p>
                         <p className="font-medium">
-                          {order.deliveryInfo.deliveryDate ? formatDate(order.deliveryInfo.deliveryDate) : 'Date not specified'}
+                          {order.deliveryInfo.deliveryDate ? formatDate(order.deliveryInfo.deliveryDate) : 'Date not specified'} 
+                          {order.deliveryInfo.deliveryTime && ` (${order.deliveryInfo.deliveryTime})`}
                         </p>
                       </div>
                     </div>

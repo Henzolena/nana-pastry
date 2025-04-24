@@ -1,5 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
+import { lazy, Suspense } from 'react'
+import { Toaster } from 'sonner'
 
 // Layout components
 import Navbar from '@/components/layout/Navbar'
@@ -18,6 +20,7 @@ import CakeCustomizationPage from '@/pages/CakeCustomizationPage'
 import Auth from '@/pages/Auth'
 import Account from '@/pages/Account'
 import OrderDetail from '@/pages/OrderDetail'
+import ProductDetail from '@/pages/ProductDetail'
 
 // Context Providers
 import { CartProvider } from '@/contexts/CartContext'
@@ -30,6 +33,9 @@ function App() {
   return (
     <AuthProvider>
       <CartProvider>
+        {/* Toast Notifications */}
+        <Toaster position="top-right" richColors closeButton />
+        
         <div className="min-h-screen flex flex-col">
           <Navbar />
           <Disclaimer />
@@ -39,6 +45,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/products" element={<Products />} />
+                <Route path="/products/:cakeId" element={<ProductDetail />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/request-custom-design" element={<RequestCustomDesign />} />
                 <Route path="/cart" element={<Cart />} />

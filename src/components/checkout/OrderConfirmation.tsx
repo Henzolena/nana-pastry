@@ -39,8 +39,12 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Use a ref to track if an order has ever been submitted in this session
+  const hasSubmittedOrder = React.useRef(false);
+
   // Format the pickup date or provide delivery info
   const getDeliveryOrPickupDate = (): string => {
+    // For pickup, check if we have a pickupDate
     if (deliveryInfo.method === 'pickup' && deliveryInfo.pickupDate) {
       try {
         // Create a Date object with timezone handling
@@ -49,7 +53,7 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
         
         // Validate the date
         if (isNaN(date.getTime())) {
-          console.error('Invalid date from string:', dateString);
+          console.error('Invalid pickup date from string:', dateString);
           return 'Scheduled pickup (date to be confirmed)';
         }
         
@@ -63,32 +67,38 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
         console.error('Error formatting pickup date:', error);
         return 'Scheduled pickup (date to be confirmed)';
       }
-    } else if (deliveryInfo.method === 'delivery' && deliveryInfo.deliveryDate) {
-      try {
-        // Create a Date object with timezone handling
-        const dateString = deliveryInfo.deliveryDate + 'T00:00:00';
-        const date = new Date(dateString);
-        
-        // Validate the date
-        if (isNaN(date.getTime())) {
-          console.error('Invalid date from string:', dateString);
+    } 
+    // For delivery, check if we have a deliveryDate
+    else if (deliveryInfo.method === 'delivery') {
+      if (deliveryInfo.deliveryDate) {
+        try {
+          // Create a Date object with timezone handling
+          const dateString = deliveryInfo.deliveryDate + 'T00:00:00';
+          const date = new Date(dateString);
+          
+          // Validate the date
+          if (isNaN(date.getTime())) {
+            console.error('Invalid delivery date from string:', dateString);
+            return 'Scheduled delivery (date to be confirmed)';
+          }
+          
+          return date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+        } catch (error) {
+          console.error('Error formatting delivery date:', error);
           return 'Scheduled delivery (date to be confirmed)';
         }
-        
-        return date.toLocaleDateString('en-US', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
-      } catch (error) {
-        console.error('Error formatting delivery date:', error);
-        return 'Scheduled delivery (date to be confirmed)';
+      } else {
+        // No delivery date specified
+        return 'Delivery arranged (Est. 2-3 business days)';
       }
-    } else if (deliveryInfo.method === 'delivery') {
-      // Fallback if no delivery date specified
-      return 'Delivery arranged (Est. 2-3 business days)'; 
     }
+    
+    // Fallback
     return 'Date to be confirmed';
   };
 
@@ -114,22 +124,28 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
     }));
   }, [cartState.items]);
 
-  // Save the order to Firestore when component mounts
+  // Save the order to Firestore only once when component mounts
   useEffect(() => {
-    let isMounted = true;
-    // Use a ref to track if we've already started the order process in this session
-    const isProcessingRef = { current: false };
-    
-    const saveOrder = async () => {
-      if (!user || !cartState.items.length) return;
+    // Skip if we've already submitted an order in this session
+    if (hasSubmittedOrder.current || !user || !cartState.items.length) {
+      return;
+    }
 
-      isProcessingRef.current = true;
-      setOrderSaveError(null);
+    // Immediately mark as submitted to prevent any possibility of duplicate submissions
+    hasSubmittedOrder.current = true;
 
+    // Define the async function
+    const submitOrder = async () => {
       try {
-        // Create order data with proper types
+        setOrderSaveError(null);
+        
+        // Create a stable idempotency key based ONLY on userId and orderId
+        // This ensures it's the same key even across page refreshes
+        const stableIdempotencyKey = `order_${user.uid || 'guest'}_${orderId}`;
+        
+        // Create order data
         const orderData: OrderData = {
-          userId: user?.uid || "",
+          userId: user.uid || "",
           items: orderItems,
           subtotal: cartState.subtotal,
           tax: cartState.tax,
@@ -139,8 +155,8 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
           paymentMethod: paymentInfo.method || "",
           deliveryMethod: deliveryInfo.method || "pickup",
           customerInfo: {
-            name: user?.displayName || `${customerInfo.firstName} ${customerInfo.lastName}` || "",
-            email: user?.email || customerInfo.email || "",
+            name: user.displayName || `${customerInfo.firstName} ${customerInfo.lastName}` || "",
+            email: user.email || customerInfo.email || "",
             phone: customerInfo.phone || ""
           },
           isCustomOrder: cartState.items.some(item => item.customizations && Object.keys(item.customizations).length > 0),
@@ -150,56 +166,67 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
               city: deliveryInfo.city || "",
               state: deliveryInfo.state || "",
               zipCode: deliveryInfo.zipCode || "",
-              deliveryDate: deliveryInfo.deliveryDate ? new Date(deliveryInfo.deliveryDate) : new Date(),
+              deliveryDate: (() => {
+                try {
+                  if (deliveryInfo.deliveryDate) {
+                    const date = new Date(deliveryInfo.deliveryDate + 'T00:00:00');
+                    if (!isNaN(date.getTime())) {
+                      return Timestamp.fromDate(date);
+                    }
+                  }
+                  return Timestamp.now();
+                } catch (err) {
+                  console.error('Error converting deliveryDate to Timestamp:', err);
+                  return Timestamp.now();
+                }
+              })(),
               deliveryTime: deliveryInfo.deliveryTime || "12:00 PM",
               deliveryFee: 10 // Default delivery fee
             }
           }),
           ...(deliveryInfo.method === 'pickup' && {
             pickupInfo: {
-              pickupDate: deliveryInfo.pickupDate ? new Date(deliveryInfo.pickupDate) : new Date(),
+              pickupDate: (() => {
+                try {
+                  if (deliveryInfo.pickupDate) {
+                    const date = new Date(deliveryInfo.pickupDate + 'T00:00:00');
+                    if (!isNaN(date.getTime())) {
+                      return Timestamp.fromDate(date);
+                    }
+                  }
+                  return Timestamp.now();
+                } catch (err) {
+                  console.error('Error converting pickupDate to Timestamp:', err);
+                  return Timestamp.now();
+                }
+              })(),
               pickupTime: deliveryInfo.pickupTime || "12:00 PM",
               storeLocation: "Main Store"
             }
           }),
-          idempotencyKey: generateIdempotencyKey()
+          // Use the stable idempotency key
+          idempotencyKey: stableIdempotencyKey
         };
         
-        // Save order to Firestore
-        console.log('Saving order to Firestore...');
+        console.log('Submitting order with idempotency key:', stableIdempotencyKey);
         const savedOrderId = await createNewOrder(orderData);
         console.log('Order saved successfully with ID:', savedOrderId);
         
-        if (isMounted) {
-          setFirestoreOrderId(savedOrderId);
-          clearCart(); // Clear cart after successful order
-          setIsOrderSaved(true);
-        }
+        setFirestoreOrderId(savedOrderId);
+        clearCart();
+        setIsOrderSaved(true);
       } catch (err: any) {
         console.error('Error saving order:', err);
-        if (isMounted) {
-          setOrderSaveError(err.message || 'Failed to process your order. Please try again.');
-          setIsOrderSaved(false);
-          setFirestoreOrderId(null);
-          isProcessingRef.current = false; // Reset processing flag on error to allow retry
-        }
-      } finally {
-        // Even if there was an error, we don't want to try again automatically
-        if (isMounted) {
-          setIsOrderSaved(true);
-        }
+        setOrderSaveError(err.message || 'Failed to process your order. Please try again.');
+        // We don't reset hasSubmittedOrder.current here because we still want to prevent duplicate submissions
       }
     };
+
+    // Execute the order submission
+    submitOrder();
     
-    // Only try to save the order if it hasn't been saved yet
-    if (!isOrderSaved) {
-      saveOrder();
-    }
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [cartState.items, clearCart, user, isOrderSaved, paymentInfo, deliveryInfo]);
+    // No dependency array - this effect runs exactly once when the component mounts
+  }, []);
 
   return (
     <div className="max-w-2xl mx-auto text-center">

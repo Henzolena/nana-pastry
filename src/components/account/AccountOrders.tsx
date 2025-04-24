@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { ShoppingBag, Clock, ArrowRight, CakeSlice, RefreshCw, AlertTriangle, AlertCircle } from 'lucide-react';
+import { ShoppingBag, Clock, ArrowRight, CakeSlice, RefreshCw, AlertTriangle, AlertCircle, MapPin } from 'lucide-react';
 import { getUserOrderHistory } from '@/services/order';
 import type { Order } from '@/services/order';
 import { formatCurrency } from '@/utils/formatters';
@@ -330,6 +330,27 @@ export default function AccountOrders() {
     }
   };
 
+  // Helper to safely format dates with additional logging
+  const safeFormatDate = (order: any, path: string): string => {
+    const segments = path.split('.');
+    let value = order;
+    
+    for (const segment of segments) {
+      if (!value || typeof value !== 'object') {
+        console.debug(`[DateFormat] Missing segment ${segment} in path ${path} for order ${order?.id}`);
+        return 'N/A';
+      }
+      value = value[segment];
+    }
+    
+    if (!value) {
+      console.debug(`[DateFormat] Null/undefined value for ${path} in order ${order?.id}`);
+      return 'N/A';
+    }
+    
+    return formatDate(value);
+  };
+
   // Get order status badge style
   const getStatusBadgeClass = (status: string): string => {
     switch (status) {
@@ -436,15 +457,21 @@ export default function AccountOrders() {
                       {formatDate(order.createdAt)}
                     </div>
                     
-                    {order.delivery?.date && (
-                      <div className="text-muted-foreground text-xs md:text-sm">
-                        Delivery: {formatDate(order.delivery.date)}
+                    {/* Display Delivery Info (updated path) */}
+                    {order.deliveryMethod === 'delivery' && order.deliveryInfo && (
+                      <div className="text-muted-foreground text-xs md:text-sm flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        Delivery: {safeFormatDate(order, 'deliveryInfo.deliveryDate')}
+                        {order.deliveryInfo?.deliveryTime && ` (${order.deliveryInfo.deliveryTime})`}
                       </div>
                     )}
                     
-                    {order.pickup?.date && (
-                      <div className="text-muted-foreground text-xs md:text-sm">
-                        Pickup: {formatDate(order.pickup.date)}
+                    {/* Display Pickup Info (updated path) */}
+                    {order.deliveryMethod === 'pickup' && order.pickupInfo && (
+                      <div className="text-muted-foreground text-xs md:text-sm flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        Pickup: {safeFormatDate(order, 'pickupInfo.pickupDate')}
+                        {order.pickupInfo?.pickupTime && ` (${order.pickupInfo.pickupTime})`}
                       </div>
                     )}
                   </div>
@@ -491,12 +518,13 @@ export default function AccountOrders() {
                     <div className="mt-2">
                       <div className="font-medium">Delivery Information</div>
                       <div className="text-sm">
-                        Delivery Date: {formatDate(order.deliveryDetails?.deliveryDate)}
+                        Delivery Date: {safeFormatDate(order, 'deliveryInfo.deliveryDate')}
+                        {order.deliveryInfo?.deliveryTime && ` (${order.deliveryInfo.deliveryTime})`}
                       </div>
-                      {order.deliveryDetails?.address && (
+                      {order.deliveryInfo?.address && (
                         <div className="text-sm">
-                          Address: {order.deliveryDetails.address.street}, {order.deliveryDetails.address.city}, 
-                          {order.deliveryDetails.address.state} {order.deliveryDetails.address.zipCode}
+                          Address: {order.deliveryInfo.address}, {order.deliveryInfo.city}, 
+                          {order.deliveryInfo.state} {order.deliveryInfo.zipCode}
                         </div>
                       )}
                     </div>
@@ -504,10 +532,11 @@ export default function AccountOrders() {
                     <div className="mt-2">
                       <div className="font-medium">Pickup Information</div>
                       <div className="text-sm">
-                        Pickup Date: {formatDate(order.pickupDetails?.pickupDate)}
+                        Pickup Date: {safeFormatDate(order, 'pickupInfo.pickupDate')}
+                        {order.pickupInfo?.pickupTime && ` (${order.pickupInfo.pickupTime})`}
                       </div>
                       <div className="text-sm">
-                        Location: {order.pickupDetails?.location || 'Main Store'}
+                        Location: {order.pickupInfo?.storeLocation || 'Main Store'}
                       </div>
                     </div>
                   )}

@@ -40,7 +40,7 @@ const Checkout: React.FC = () => {
     customerInfo: null,
     deliveryInfo: null,
     paymentInfo: null,
-    orderId: `ORD-${new Date().getFullYear()}${(new Date().getMonth() + 1).toString().padStart(2, '0')}-${uuidv4().substring(0, 8).toUpperCase()}`,
+    orderId: `ORD-${new Date().getTime()}-${uuidv4().substring(0, 8).toUpperCase()}`,
   });
 
   useEffect(() => {
