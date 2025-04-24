@@ -1,6 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
-import { lazy, Suspense } from 'react'
 import { Toaster } from 'sonner'
 
 // Layout components

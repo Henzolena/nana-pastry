@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, CheckCircle, Truck, Home, AlertTriangle, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Calendar, Truck, Home, AlertTriangle, ShoppingBag } from 'lucide-react';
 import { getOrder, Order } from '@/services/order';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/utils/formatters';

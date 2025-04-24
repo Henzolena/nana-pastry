@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Cake, ShoppingBag, Settings, Heart, Clock } from 'lucide-react';
+import { Cake, ShoppingBag, Settings, Heart } from 'lucide-react';
 import UserProfile from '@/components/auth/UserProfile';
 import AccountOrders from '@/components/account/AccountOrders';
 import AccountSettings from '@/components/account/AccountSettings';

@@ -3,8 +3,7 @@ import {
   uploadBytes, 
   getDownloadURL, 
   deleteObject,
-  listAll,
-  StorageReference
+  listAll
 } from 'firebase/storage';
 import { storage } from '../lib/firebase';
 import { v4 as uuidv4 } from 'uuid';

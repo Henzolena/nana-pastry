@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { cn } from '@/utils/cn';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserProfile } from '@/services/userService';
-import type { UserProfile } from '@/services/userService';
 
 export interface CustomerInfo {
   firstName: string;
@@ -29,7 +28,7 @@ const CustomerInfoForm: React.FC<CustomerInfoFormProps> = ({ initialData, onSubm
   const { user } = useAuth();
   const [formData, setFormData] = useState<CustomerInfo>(initialData || defaultFormData);
   const [errors, setErrors] = useState<Partial<Record<keyof CustomerInfo, string>>>({});
-  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [,setLoadingProfile] = useState(false);
 
   // Fetch user profile data when component mounts if user is logged in
   useEffect(() => {

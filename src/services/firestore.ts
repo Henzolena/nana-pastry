@@ -1,5 +1,4 @@
 import {
-  getFirestore,
   collection,
   doc,
   addDoc,
@@ -91,7 +90,7 @@ export interface Order {
  * @param userProfile User profile data
  * @returns Promise with user ID
  */
-export const saveUserProfile = async (p0: { userId: string; displayName: string; photoURL: string; email: string; phoneNumber: string; address: string; }, p1: boolean, userProfile: UserProfile): Promise<string> => {
+export const saveUserProfile = async (_p0: { userId: string; displayName: string; photoURL: string; email: string; phoneNumber: string; address: string; }, _p1: boolean, userProfile: UserProfile): Promise<string> => {
   try {
     const userRef = doc(db, COLLECTIONS.USERS, userProfile.userId);
     const userDoc = await getDoc(userRef);

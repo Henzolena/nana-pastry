@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getCakeById } from '@/services/firestore';
-import { Heart, ShoppingBag, Star, Info, ArrowLeft, Check } from 'lucide-react';
+import { ShoppingBag, Star, Info, ArrowLeft, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
 import { Cake } from '@/types';
@@ -25,7 +25,7 @@ const fadeIn = {
 const ProductDetail = () => {
   const { cakeId } = useParams<{ cakeId: string }>();
   const navigate = useNavigate();
-  const { addItem, toggleCart } = useCart();
+  const { addItem, } = useCart();
   const [cake, setCake] = useState<Cake | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

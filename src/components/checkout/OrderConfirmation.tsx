@@ -7,11 +7,9 @@ import { formatCurrency } from '@/utils/formatters';
 import { CustomerInfo } from './CustomerInfoForm';
 import { DeliveryInfo } from './DeliveryOptionsForm';
 import { PaymentInfo } from './PaymentMethod';
-import { createNewOrder, cartItemsToOrderItems, OrderData, OrderStatus, PaymentStatus, calculateEstimatedDate } from '@/services/order';
-import { getUserProfile } from '@/services/userService';
-import { useNavigate, useLocation } from 'react-router-dom';
-import type { UserProfile } from '@/services/userService';
-import type { Order } from '@/services/order';
+import { createNewOrder, OrderData} from '@/services/order';
+
+
 import { Timestamp } from 'firebase/firestore';
 
 interface OrderConfirmationProps {
@@ -21,9 +19,7 @@ interface OrderConfirmationProps {
   orderId: string;
 }
 
-function generateIdempotencyKey(): string {
-  return `order_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-}
+
 
 const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
   customerInfo,
@@ -33,11 +29,10 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
 }) => {
   const { state: cartState, clearCart } = useCart();
   const { user } = useAuth();
-  const [isOrderSaved, setIsOrderSaved] = useState(false);
+  const [, setIsOrderSaved] = useState(false);
   const [orderSaveError, setOrderSaveError] = useState<string | null>(null);
   const [firestoreOrderId, setFirestoreOrderId] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const location = useLocation();
+
 
   // Use a ref to track if an order has ever been submitted in this session
   const hasSubmittedOrder = React.useRef(false);
@@ -107,10 +102,7 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
     return deliveryInfo.method === 'pickup' ? (deliveryInfo.pickupTime || 'Time not selected') : 'N/A';
   };
 
-  // Get delivery time slot
-  const getDeliveryTime = (): string => {
-    return deliveryInfo.method === 'delivery' ? (deliveryInfo.deliveryTime || 'Time not selected') : 'N/A';
-  };
+
 
   // Convert cart items to order items
   const orderItems = useMemo(() => {

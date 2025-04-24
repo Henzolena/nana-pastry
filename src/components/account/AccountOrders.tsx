@@ -4,36 +4,18 @@ import { ShoppingBag, Clock, ArrowRight, CakeSlice, RefreshCw, AlertTriangle, Al
 import { getUserOrderHistory } from '@/services/order';
 import type { Order } from '@/services/order';
 import { formatCurrency } from '@/utils/formatters';
-import { Skeleton } from '../ui/skeleton';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+
 
 export default function AccountOrders() {
-  const { user, loading: authLoading } = useAuth();
+  const { user,  } = useAuth();
   const [loading, setLoading] = useState<boolean>(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [indexError, setIndexError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
-  // Utility function to check if two orders are the same
-  const isOrderEqual = (order1: Order, order2: Order): boolean => {
-    if (order1.id !== order2.id) return false;
-    
-    // Check for same status
-    if (order1.status !== order2.status) return false;
-    
-    // Check for same number of items
-    if (order1.items?.length !== order2.items?.length) return false;
-    
-    // Check for same total
-    if (order1.totals?.total !== order2.totals?.total) return false;
-    
-    return true;
-  };
+
+
 
   // Fetch orders with improved deduplication
   const fetchOrders = useCallback(async () => {
@@ -237,9 +219,10 @@ export default function AccountOrders() {
       userOrders.forEach(order => {
         if (order && order.id) {
           // If we already have this order ID, only replace it if this one is newer
-          if (!uniqueOrders.has(order.id) || 
-              (order.updatedAt && uniqueOrders.get(order.id)?.updatedAt && 
-               order.updatedAt > uniqueOrders.get(order.id)?.updatedAt)) {
+          const existingOrder = uniqueOrders.get(order.id);
+          if (!existingOrder || 
+              (order.updatedAt && existingOrder.updatedAt && 
+               order.updatedAt > existingOrder.updatedAt)) {
             uniqueOrders.set(order.id, order);
           }
         }

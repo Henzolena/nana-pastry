@@ -42,7 +42,7 @@ export default function SignupForm() {
         
         {(localError || error) && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 border border-red-200 rounded">
-            {localError || error.message}
+            {localError || error?.message}
           </div>
         )}
         

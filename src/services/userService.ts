@@ -1,6 +1,5 @@
 import { User } from 'firebase/auth';
-import { where, orderBy, limit } from 'firebase/firestore';
-import { FirestoreDocument, getDocumentById, getDocuments, setDocument, updateDocument, deleteDocument } from '../lib/firestore';
+import { FirestoreDocument, getDocumentById,setDocument, updateDocument, deleteDocument } from '../lib/firestore';
 import { auth } from '../lib/firebase';
 
 // User profile interface
