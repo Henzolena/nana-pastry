@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 import { useCart } from '@/contexts/CartContext';
 import { CustomerInfo } from './CustomerInfoForm';
 import { DeliveryInfo } from './DeliveryOptionsForm';
@@ -7,7 +7,13 @@ import { DeliveryInfo } from './DeliveryOptionsForm';
 interface OrderReviewProps {
   customerInfo: CustomerInfo;
   deliveryInfo: DeliveryInfo;
+  items: any[];
+  subtotal: number;
+  tax: number;
+  shippingCost: number;
+  total: number;
   onSubmit: () => void;
+  onBack: () => void;
 }
 
 const OrderReview: React.FC<OrderReviewProps> = ({ customerInfo, deliveryInfo, onSubmit }) => {
@@ -25,25 +31,7 @@ const OrderReview: React.FC<OrderReviewProps> = ({ customerInfo, deliveryInfo, o
     onSubmit();
   };
 
-  const formatDate = (dateString: string | undefined): string => {
-    if (!dateString) return 'Date not selected';
-    try {
-      // Ensure the date string is treated correctly (e.g., handle YYYY-MM-DD)
-      const date = new Date(dateString + 'T00:00:00'); // Assume local timezone if just date
-      if (isNaN(date.getTime())) {
-          return 'Invalid Date';
-      }
-      return date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Invalid Date';
-    }
-  };
+  // Simplified since we're now using the shared formatDate utility
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -140,7 +128,7 @@ const OrderReview: React.FC<OrderReviewProps> = ({ customerInfo, deliveryInfo, o
               </div>
               <div>
                 <h4 className="text-sm font-medium text-gray-500 mb-1">Date & Time</h4>
-                <p>{formatDate(deliveryInfo.pickupDate)}</p>
+                <p>{formatDate(deliveryInfo.pickupDate, { type: 'dayDate', fallback: 'Date not selected' })}</p>
                 <p>{deliveryInfo.pickupTime}</p>
               </div>
             </div>

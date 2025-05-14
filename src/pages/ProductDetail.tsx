@@ -129,18 +129,20 @@ const ProductDetail = () => {
     );
   }
 
+  // Use images array
   const images = cake.images || [];
+  const mainImageUrl = images[activeImageIndex] || '/public/images/cakes/default-cake.png'; // Use first image as main, with fallback
 
   return (
     <div className="container mx-auto pt-32 pb-16 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Back button */}
         <button 
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/products')} // Navigate back to products list
           className="mb-6 flex items-center text-gray-600 hover:text-hotpink transition-colors"
         >
           <ArrowLeft className="h-5 w-5 mr-1" />
-          Back
+          Back to Cakes
         </button>
 
         <motion.div 
@@ -153,7 +155,7 @@ const ProductDetail = () => {
           <div className="space-y-4">
             <div className="relative overflow-hidden rounded-xl bg-pink-50 aspect-square">
               <img 
-                src={images[activeImageIndex]} 
+                src={mainImageUrl} // Use the selected image URL
                 alt={cake.name}
                 className="w-full h-full object-cover"
               />
@@ -193,6 +195,7 @@ const ProductDetail = () => {
             <div>
               <h1 className="text-3xl font-bold text-deepbrown mb-2">{cake.name}</h1>
               <div className="flex items-center mb-4">
+                {/* Placeholder for reviews/rating */}
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
                     <Star 
@@ -202,7 +205,7 @@ const ProductDetail = () => {
                     />
                   ))}
                 </div>
-                <span className="ml-2 text-sm text-gray-500">4.0 (24 reviews)</span>
+                <span className="ml-2 text-sm text-gray-500">4.0 (24 reviews)</span> {/* Static review count */}
               </div>
               <p className="text-2xl font-medium text-deepbrown mb-6">
                 {formatCurrency(calculatePrice())}
@@ -331,4 +334,4 @@ const ProductDetail = () => {
   );
 };
 
-export default ProductDetail; 
+export default ProductDetail;

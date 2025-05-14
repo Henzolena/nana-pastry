@@ -4,7 +4,10 @@ export interface Cake {
   category: CakeCategory;
   description: string;
   price: number;
-  images: string[];
+  images: string[]; // Changed back to images: string[]
+  imageUrl?: string; // Add imageUrl for backward compatibility
+  isAvailable: boolean; // Added for cake availability
+  bakerId?: string; // Optional: ID of the baker who created/manages this cake
   featured: boolean;
   ingredients?: string[];
   baseIngredients?: string[];
@@ -14,6 +17,35 @@ export interface Cake {
   frostings?: string[];
   allergens?: string[];
   sizes?: CakeSize[];
+  createdAt?: Date | any; // Add createdAt field for timestamps
+  updatedAt?: Date | any; // Add updatedAt field for timestamps
+}
+
+export interface Order {
+  userId: string | null;
+  bakerId: string | null;
+  items: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+    customizations: any | null;
+  }>;
+  subtotal: number;
+  tax: number;
+  total: number;
+  status: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  deliveryMethod?: string;
+  customerInfo: any;
+  deliveryInfo: any | null;
+  pickupInfo: any | null;
+  specialInstructions: string | null;
+  isCustomOrder: boolean;
+  orderId?: string;
+  createdAt?: any;
+  updatedAt?: any;
 }
 
 export type CakeCategory = 
@@ -147,4 +179,4 @@ export interface HomePageContent {
     image: string;
     link: string;
   }[];
-} 
+}

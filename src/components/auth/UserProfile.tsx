@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { UserCircle, Cake, Calendar, Mail, ShoppingBag, Phone } from 'lucide-react';
 import { getUserProfile } from '@/services/userService';
 import type { UserProfile as UserProfileType } from '@/services/userService';
+import { formatDate } from '@/utils/formatters';
 
 export default function UserProfile() {
   const { user } = useAuth();
@@ -33,22 +34,10 @@ export default function UserProfile() {
     return <div>Loading profile...</div>;
   }
   
-  // Format date
-  const formatDate = (timestamp: any) => {
-    if (!timestamp) return 'N/A';
-    
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-    });
-  };
-  
   // Get member since date
   const memberSince = profileData?.createdAt 
-    ? formatDate(profileData.createdAt)
-    : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+    ? formatDate(profileData.createdAt, { type: 'date' })
+    : formatDate(new Date(), { type: 'date' });
 
   return (
     <div>
@@ -147,4 +136,4 @@ export default function UserProfile() {
       )}
     </div>
   );
-} 
+}

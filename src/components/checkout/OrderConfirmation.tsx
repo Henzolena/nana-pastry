@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { CheckCircle, ShoppingBag, Calendar, Home, AlertTriangle } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatDate, parseDate } from '@/utils/formatters';
 import { CustomerInfo } from './CustomerInfoForm';
 import { DeliveryInfo } from './DeliveryOptionsForm';
 import { PaymentInfo } from './PaymentMethod';
@@ -17,6 +17,8 @@ interface OrderConfirmationProps {
   deliveryInfo: DeliveryInfo;
   paymentInfo: PaymentInfo;
   orderId: string;
+  items: any[];
+  total: number;
 }
 
 
@@ -42,22 +44,7 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
     // For pickup, check if we have a pickupDate
     if (deliveryInfo.method === 'pickup' && deliveryInfo.pickupDate) {
       try {
-        // Create a Date object with timezone handling
-        const dateString = deliveryInfo.pickupDate + 'T00:00:00';
-        const date = new Date(dateString);
-        
-        // Validate the date
-        if (isNaN(date.getTime())) {
-          console.error('Invalid pickup date from string:', dateString);
-          return 'Scheduled pickup (date to be confirmed)';
-        }
-        
-        return date.toLocaleDateString('en-US', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
+        return formatDate(deliveryInfo.pickupDate, { type: 'dayDate', fallback: 'Scheduled pickup (date to be confirmed)' });
       } catch (error) {
         console.error('Error formatting pickup date:', error);
         return 'Scheduled pickup (date to be confirmed)';
@@ -67,22 +54,7 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
     else if (deliveryInfo.method === 'delivery') {
       if (deliveryInfo.deliveryDate) {
         try {
-          // Create a Date object with timezone handling
-          const dateString = deliveryInfo.deliveryDate + 'T00:00:00';
-          const date = new Date(dateString);
-          
-          // Validate the date
-          if (isNaN(date.getTime())) {
-            console.error('Invalid delivery date from string:', dateString);
-            return 'Scheduled delivery (date to be confirmed)';
-          }
-          
-          return date.toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          });
+          return formatDate(deliveryInfo.deliveryDate, { type: 'dayDate', fallback: 'Scheduled delivery (date to be confirmed)' });
         } catch (error) {
           console.error('Error formatting delivery date:', error);
           return 'Scheduled delivery (date to be confirmed)';
@@ -119,7 +91,7 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
   // Save the order to Firestore only once when component mounts
   useEffect(() => {
     // Skip if we've already submitted an order in this session
-    if (hasSubmittedOrder.current || !user || !cartState.items.length) {
+    if (hasSubmittedOrder.current || !cartState.items.length) {
       return;
     }
 
@@ -133,11 +105,11 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
         
         // Create a stable idempotency key based ONLY on userId and orderId
         // This ensures it's the same key even across page refreshes
-        const stableIdempotencyKey = `order_${user.uid || 'guest'}_${orderId}`;
+        const stableIdempotencyKey = `order_${user?.uid || 'guest'}_${orderId}`;
         
         // Create order data
         const orderData: OrderData = {
-          userId: user.uid || "",
+          userId: user?.uid || undefined,
           items: orderItems,
           subtotal: cartState.subtotal,
           tax: cartState.tax,
@@ -147,8 +119,8 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
           paymentMethod: paymentInfo.method || "",
           deliveryMethod: deliveryInfo.method || "pickup",
           customerInfo: {
-            name: user.displayName || `${customerInfo.firstName} ${customerInfo.lastName}` || "",
-            email: user.email || customerInfo.email || "",
+            name: user?.displayName || `${customerInfo.firstName} ${customerInfo.lastName}` || "",
+            email: user?.email || customerInfo.email || "",
             phone: customerInfo.phone || ""
           },
           isCustomOrder: cartState.items.some(item => item.customizations && Object.keys(item.customizations).length > 0),
@@ -161,8 +133,8 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
               deliveryDate: (() => {
                 try {
                   if (deliveryInfo.deliveryDate) {
-                    const date = new Date(deliveryInfo.deliveryDate + 'T00:00:00');
-                    if (!isNaN(date.getTime())) {
+                    const date = parseDate(deliveryInfo.deliveryDate);
+                    if (date) {
                       return Timestamp.fromDate(date);
                     }
                   }
@@ -181,8 +153,8 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
               pickupDate: (() => {
                 try {
                   if (deliveryInfo.pickupDate) {
-                    const date = new Date(deliveryInfo.pickupDate + 'T00:00:00');
-                    if (!isNaN(date.getTime())) {
+                    const date = parseDate(deliveryInfo.pickupDate);
+                    if (date) {
                       return Timestamp.fromDate(date);
                     }
                   }
@@ -261,7 +233,19 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
             </div>
             <div>
               <h4 className="text-sm font-medium text-gray-500 mb-1">Payment Method</h4>
-              <p className="capitalize">{paymentInfo.method === 'credit-card' ? 'Credit Card' : 'Cash on Delivery'}</p>
+              <p className="capitalize">
+                {paymentInfo.method === 'credit-card' 
+                  ? 'Credit Card' 
+                  : paymentInfo.method === 'cash-app'
+                    ? 'Cash App'
+                    : 'Cash on Delivery'
+                }
+                {paymentInfo.method === 'cash-app' && paymentInfo.cashAppDetails?.confirmationId && (
+                  <span className="block text-sm text-gray-500 mt-1">
+                    Confirmation ID: {paymentInfo.cashAppDetails.confirmationId}
+                  </span>
+                )}
+              </p>
             </div>
           </div>
           
@@ -363,6 +347,15 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({
           >
             Return to Home
           </Link>
+          
+          {firestoreOrderId && (
+            <Link
+              to={`/orders/${firestoreOrderId}`}
+              className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50"
+            >
+              View Order Details
+            </Link>
+          )}
           
           <Link
             to="/products"

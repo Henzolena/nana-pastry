@@ -46,12 +46,19 @@ export interface UserProfile {
   createdAt: Date;
   updatedAt?: Date;
   orderHistory?: string[]; // Array of order IDs
+  role?: string; // User role (e.g., 'baker', 'admin')
+  availability?: { // Optional: For bakers
+    daysOff?: string[]; // e.g., ['saturday', 'sunday']
+    workingHours?: { start: string; end: string }; // e.g., { start: '09:00', end: '17:00' }
+  };
+  specializations?: string[]; // Optional: For bakers, e.g., ['Wedding Cakes', 'Cupcakes']
 }
 
 // Or define the Order type if not available in types
 export interface Order {
   id: string;
-  userId?: string;
+  userId?: string; // Customer who placed the order
+  bakerId?: string | null; // Baker who claimed/is assigned the order
   items: any[];
   subtotal: number;
   tax: number;
@@ -115,6 +122,98 @@ export const saveUserProfile = async (_p0: { userId: string; displayName: string
 };
 
 /**
+ * Get order history for a specific baker (completed, delivered, cancelled)
+ * @param bakerId The UID of the baker
+ * @returns Array of Order
+ */
+export const getBakerOrderHistory = async (bakerId: string): Promise<Order[]> => {
+  try {
+    const ordersCollection = collection(db, COLLECTIONS.ORDERS);
+    const q = query(
+      ordersCollection,
+      where('bakerId', '==', bakerId),
+      where('status', 'in', ['completed', 'delivered', 'cancelled']), // Statuses for historical orders
+      orderBy('createdAt', 'desc') // Show most recent first
+    );
+    const ordersSnapshot = await getDocs(q);
+
+    return ordersSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(0),
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : undefined,
+      } as Order;
+    });
+  } catch (error) {
+    console.error(`Error getting order history for baker ${bakerId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Get active orders for a specific baker
+ * @param bakerId The UID of the baker
+ * @returns Array of Order
+ */
+export const getBakerActiveOrders = async (bakerId: string): Promise<Order[]> => {
+  try {
+    const ordersCollection = collection(db, COLLECTIONS.ORDERS);
+    const q = query(
+      ordersCollection,
+      where('bakerId', '==', bakerId),
+      where('status', 'not-in', ['completed', 'cancelled', 'delivered']), // Example statuses for non-active orders
+      orderBy('createdAt', 'desc') // Or by due date
+    );
+    const ordersSnapshot = await getDocs(q);
+
+    return ordersSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(0),
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : undefined,
+      } as Order;
+    });
+  } catch (error) {
+    console.error(`Error getting active orders for baker ${bakerId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Get all unclaimed orders (status 'pending' and no bakerId)
+ * @returns Array of Order
+ */
+export const getUnclaimedOrders = async (): Promise<Order[]> => {
+  try {
+    const ordersCollection = collection(db, COLLECTIONS.ORDERS);
+    const q = query(
+      ordersCollection,
+      where('status', '==', 'pending'), // Assuming 'pending' means new and unclaimed
+      where('bakerId', '==', null),     // Or where('bakerId', 'not-in', [someValue]) if null doesn't work as expected for non-existent fields
+      orderBy('createdAt', 'asc')       // Show oldest first, or by due date
+    );
+    const ordersSnapshot = await getDocs(q);
+    
+    return ordersSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(0),
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : undefined,
+      } as Order;
+    });
+  } catch (error) {
+    console.error('Error getting unclaimed orders:', error);
+    throw error;
+  }
+};
+
+/**
  * Get user profile from Firestore
  * @param userId User ID
  * @returns User profile or null if not found
@@ -132,8 +231,9 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
       
       return {
         ...userData,
-        createdAt: userData.createdAt.toDate(),
-        updatedAt: userData.updatedAt?.toDate(),
+        userId: userRef.id, // Ensure userId is included
+        createdAt: userData.createdAt?.toDate ? userData.createdAt.toDate() : new Date(0), // Fallback if not a Timestamp or undefined
+        updatedAt: userData.updatedAt?.toDate ? userData.updatedAt.toDate() : undefined, // Handle optional updatedAt
       };
     }
     
@@ -321,6 +421,7 @@ export const createOrder = async (order: Omit<Order, 'id'>): Promise<string> => 
     const docRef = await addDoc(ordersCollection, {
       ...order,
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
       status: order.status || 'pending'
     });
     
@@ -474,4 +575,31 @@ export const getAllOrders = async (
     console.error('Error getting all orders:', error);
     throw error;
   }
-}; 
+};
+
+/**
+ * Get all user profiles from Firestore
+ * @returns Array of UserProfile
+ */
+export const getAllUsers = async (): Promise<UserProfile[]> => {
+  try {
+    const usersCollection = collection(db, COLLECTIONS.USERS);
+    const usersSnapshot = await getDocs(usersCollection);
+    
+    return usersSnapshot.docs.map(doc => {
+      const userData = doc.data() as Omit<UserProfile, 'createdAt' | 'updatedAt'> & {
+        createdAt: Timestamp;
+        updatedAt?: Timestamp;
+      };
+      return {
+        ...userData,
+        userId: doc.id, // Ensure userId is included from the document ID
+        createdAt: userData.createdAt?.toDate ? userData.createdAt.toDate() : new Date(0), // Fallback if not a Timestamp or undefined
+        updatedAt: userData.updatedAt?.toDate ? userData.updatedAt.toDate() : undefined, // Handle optional updatedAt
+      };
+    }) as UserProfile[];
+  } catch (error) {
+    console.error('Error getting all users:', error);
+    throw error;
+  }
+};

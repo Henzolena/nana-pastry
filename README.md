@@ -115,6 +115,39 @@ This application uses Firebase for several key features:
 
 See [README-FIREBASE.md](./README-FIREBASE.md) for detailed Firebase setup instructions.
 
+## 📋 Documentation
+
+The project includes various documentation to help developers understand and maintain the codebase:
+
+- [Firebase Setup](./FIREBASE-SETUP.md) - Instructions for setting up Firebase services
+- [Date Formatting](./src/docs/date-formatting.md) - Standards for date formatting across the application
+- [Testing Plan](./testing-plan.md) - Testing strategies and procedures
+
+## 🔧 Utilities
+
+### Date Formatting 
+
+The application uses a standardized date formatting system to ensure consistency across all user interfaces:
+
+```tsx
+import { formatDate } from '@/utils/formatters';
+
+// Basic date formatting - "May 15, 2023"
+formatDate(someDate);
+
+// Format with day of week - "Monday, May 15, 2023"
+formatDate(someDate, { type: 'dayDate' });
+
+// Format with time - "May 15, 2023, 12:30 PM"
+formatDate(someDate, { type: 'dateTime' });
+```
+
+Run the date format test script to verify formatting consistency:
+
+```bash
+./test/date-format-test.sh
+```
+
 ## 📝 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
@@ -127,4 +160,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-Made with ❤️ and 🍰 
+Made with ❤️ and 🍰

@@ -8,19 +8,22 @@ const COLLECTION_NAME = 'orders';
 
 // Order status types
 export type OrderStatus = 
-  | 'pending' 
-  | 'confirmed' 
-  | 'processing' 
-  | 'ready' 
-  | 'completed' 
-  | 'cancelled';
+  | 'pending'    // Initial status when order is placed
+  | 'approved'   // Order has been approved by the baker
+  | 'processing' // Baker is working on the order
+  | 'ready'      // Order is ready for pickup/delivery
+  | 'delivered'  // Order has been delivered
+  | 'picked-up'  // Order has been picked up by customer
+  | 'completed'  // Order is complete
+  | 'cancelled'  // Order has been cancelled
 
 // Payment status types
 export type PaymentStatus = 
-  | 'pending' 
-  | 'paid' 
-  | 'partial' 
-  | 'refunded';
+  | 'unpaid'    // No payment received yet
+  | 'pending'   // Payment initiated but not confirmed
+  | 'partial'   // Partial payment received
+  | 'paid'      // Full payment received
+  | 'refunded'  // Payment has been refunded
 
 // Order item interface
 export interface OrderItem {
@@ -38,6 +41,40 @@ export interface OrderItem {
     addons?: string[];
     specialInstructions?: string;
   };
+}
+
+// Payment transaction record
+export interface PaymentTransaction {
+  id: string;
+  amount: number;
+  method: 'credit-card' | 'cash' | 'cash-app';
+  date: Date | Timestamp;
+  confirmationId?: string;
+  cashAppDetails?: {
+    confirmationId?: string;
+    lastUpdated?: Date | Timestamp;
+  };
+  cardDetails?: {
+    last4?: string;
+    brand?: string;
+  };
+  notes?: string;
+}
+
+// Status history record
+export interface StatusHistoryEntry {
+  status: OrderStatus;
+  timestamp: Date | Timestamp;
+  note?: string;
+  updatedBy?: string; // userId or "system"
+}
+
+// Payment status history record
+export interface PaymentStatusHistoryEntry {
+  status: PaymentStatus;
+  timestamp: Date | Timestamp;
+  note?: string;
+  updatedBy?: string; // userId or "system"
 }
 
 // Define the basic Order data without Firestore-specific fields
@@ -79,6 +116,15 @@ export interface OrderData {
     referenceImages?: string[];
     depositAmount?: number;
   };
+  // Status tracking
+  statusHistory?: StatusHistoryEntry[];
+  // Payment tracking
+  paymentStatusHistory?: PaymentStatusHistoryEntry[];
+  // Payment transactions
+  payments?: PaymentTransaction[];
+  // Balance tracking
+  balanceDue?: number;
+  amountPaid?: number;
   // Add a field to track if the order has been linked to a user profile
   profileUpdated?: boolean;
   // Idempotency key for preventing duplicate orders
@@ -140,6 +186,31 @@ export const createNewOrder = async (orderData: OrderData): Promise<string> => {
     if (cleanOrderData.userId) {
       cleanOrderData.profileUpdated = false;
     }
+    
+    // Initialize payment tracking fields
+    cleanOrderData.amountPaid = 0;
+    cleanOrderData.balanceDue = cleanOrderData.total;
+    
+    // Initialize status history
+    const initialStatusEntry: StatusHistoryEntry = {
+      status: cleanOrderData.status,
+      timestamp: new Date(),
+      note: 'Order created',
+      updatedBy: 'system'
+    };
+    cleanOrderData.statusHistory = [initialStatusEntry];
+    
+    // Initialize payment status history
+    const initialPaymentStatusEntry: PaymentStatusHistoryEntry = {
+      status: cleanOrderData.paymentStatus,
+      timestamp: new Date(),
+      note: 'Order created',
+      updatedBy: 'system'
+    };
+    cleanOrderData.paymentStatusHistory = [initialPaymentStatusEntry];
+    
+    // Initialize empty payments array
+    cleanOrderData.payments = [];
     
     // Add creation timestamp
     cleanOrderData.createdAt = new Date();
@@ -239,26 +310,35 @@ export const getOrder = async (orderId: string): Promise<Order> => {
  * Update order status
  * @param orderId Order ID
  * @param status New order status
+ * @param note Optional note about the status change
+ * @param updatedBy User ID or "system" that made the change
  * @returns Promise indicating success
  */
 export const updateOrderStatus = async (
   orderId: string, 
-  status: OrderStatus
+  status: OrderStatus,
+  note?: string,
+  updatedBy: string = "system"
 ): Promise<void> => {
   try {
-    // Get current timestamp for status history
-    const timestamp = new Date();
+    // Get current order to validate the status transition
+    const order = await getOrder(orderId);
     
+    // Create status history entry
+    const statusEntry: StatusHistoryEntry = {
+      status,
+      timestamp: new Date(),
+      note: note || `Status changed to ${status}`,
+      updatedBy
+    };
+    
+    // Update the order with new status and append to history
     await updateDocument(COLLECTION_NAME, orderId, { 
       status,
-      // Add status update to history
-      statusHistory: {
-        add: {
-          status,
-          timestamp,
-          note: `Status changed to ${status}`
-        }
-      }
+      // Add this status update to the statusHistory array
+      statusHistory: order.statusHistory 
+        ? [...(order.statusHistory || []), statusEntry] 
+        : [statusEntry]
     });
   } catch (error) {
     console.error('Error updating order status:', error);
@@ -270,14 +350,36 @@ export const updateOrderStatus = async (
  * Update payment status
  * @param orderId Order ID
  * @param paymentStatus New payment status
+ * @param note Optional note about the payment status change
+ * @param updatedBy User ID or "system" that made the change
  * @returns Promise indicating success
  */
 export const updatePaymentStatus = async (
   orderId: string,
-  paymentStatus: PaymentStatus
+  paymentStatus: PaymentStatus,
+  note?: string,
+  updatedBy: string = "system"
 ): Promise<void> => {
   try {
-    await updateDocument(COLLECTION_NAME, orderId, { paymentStatus });
+    // Get current order
+    const order = await getOrder(orderId);
+    
+    // Create payment status history entry
+    const paymentStatusEntry: PaymentStatusHistoryEntry = {
+      status: paymentStatus,
+      timestamp: new Date(),
+      note: note || `Payment status changed to ${paymentStatus}`,
+      updatedBy
+    };
+    
+    // Update the order with new payment status and append to history
+    await updateDocument(COLLECTION_NAME, orderId, { 
+      paymentStatus,
+      // Add this payment status update to the paymentStatusHistory array
+      paymentStatusHistory: order.paymentStatusHistory 
+        ? [...(order.paymentStatusHistory || []), paymentStatusEntry] 
+        : [paymentStatusEntry]
+    });
   } catch (error) {
     console.error('Error updating payment status:', error);
     throw new Error('Failed to update payment status.');
@@ -421,15 +523,14 @@ export const calculateEstimatedDate = (
 
 /**
  * Format a date as a string (YYYY-MM-DD)
+ * @deprecated Use formatDate from utils/formatters instead
  * @param date Date to format
  * @returns Formatted date string
  */
 export const formatDateForDisplay = (date: Date): string => {
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  // Import formatDate from utils to avoid circular dependencies
+  const { formatDate } = require('../utils/formatters');
+  return formatDate(date, { type: 'date' });
 };
 
 /**
@@ -448,4 +549,152 @@ export const getAvailableTimeSlots = (date: Date): string[] => {
     return ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', 
             '2:00 PM', '3:00 PM', '4:00 PM'];
   }
-}; 
+};
+
+/**
+ * Record a payment for an order
+ * @param orderId Order ID
+ * @param paymentData Payment transaction data
+ * @returns Promise indicating success
+ */
+export const recordPayment = async (
+  orderId: string,
+  paymentData: Omit<PaymentTransaction, 'id'>
+): Promise<string> => {
+  try {
+    // Get current order
+    const order = await getOrder(orderId);
+    
+    // Create a unique payment ID
+    const paymentId = `payment_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    
+    // Create the payment transaction record
+    const paymentTransaction: PaymentTransaction = {
+      ...paymentData,
+      id: paymentId,
+      // Ensure date is a Date object if not already
+      date: paymentData.date || new Date()
+    };
+    
+    // Calculate new balance due and amount paid
+    const currentAmountPaid = order.amountPaid || 0;
+    const newAmountPaid = currentAmountPaid + paymentData.amount;
+    const newBalanceDue = Math.max(0, order.total - newAmountPaid);
+    
+    // Determine new payment status based on balance
+    // Do NOT automatically set to 'partial' or 'paid'.
+    // Payment status should be manually updated by the baker after verification.
+    let newPaymentStatus: PaymentStatus = order.paymentStatus;
+    
+    // If the status was 'unpaid', set it to 'pending' after a payment is recorded.
+    // Otherwise, keep the current status.
+    if (order.paymentStatus === 'unpaid' && newAmountPaid > 0) {
+      newPaymentStatus = 'pending';
+    }
+    
+    // Add payment to the order and update balance info
+    await updateDocument(COLLECTION_NAME, orderId, {
+      payments: order.payments 
+        ? [...(order.payments || []), paymentTransaction] 
+        : [paymentTransaction],
+      amountPaid: newAmountPaid,
+      balanceDue: newBalanceDue
+    });
+    
+    // Update payment status if it changed (only to 'pending' from 'unpaid')
+    if (newPaymentStatus !== order.paymentStatus) {
+      await updatePaymentStatus(
+        orderId, 
+        newPaymentStatus, 
+        `Payment of ${paymentData.amount.toFixed(2)} recorded by customer. Awaiting baker verification. New balance: ${newBalanceDue.toFixed(2)}`
+      );
+    }
+    
+    return paymentId;
+  } catch (error) {
+    console.error('Error recording payment:', error);
+    throw new Error('Failed to record payment.');
+  }
+};
+
+/**
+ * Process a Cash App payment for an order
+ * @param orderId Order ID
+ * @param amount Payment amount (if 0, will use the order's total or balance due)
+ * @param confirmationId Cash App confirmation ID
+ * @param notes Optional payment notes
+ * @returns Promise with payment ID
+ */
+export const processCashAppPayment = async (
+  orderId: string,
+  amount: number,
+  confirmationId: string,
+  notes?: string
+): Promise<string> => {
+  try {
+    // If amount is 0, fetch the order to determine the amount
+    if (amount === 0) {
+      const order = await getOrder(orderId);
+      amount = order.balanceDue || order.total;
+      
+      // If order already has a payment with this confirmation ID, just update it
+      if (order.payments?.some(p => 
+        p.method === 'cash-app' && 
+        p.cashAppDetails?.confirmationId?.toLowerCase() === confirmationId.toLowerCase()
+      )) {
+        // Find existing payment record
+        const existingPayment = order.payments.find(p => 
+          p.method === 'cash-app' && 
+          p.cashAppDetails?.confirmationId?.toLowerCase() === confirmationId.toLowerCase()
+        );
+        
+        if (existingPayment) {
+          // Update the payment in the array
+          const updatedPayments = order.payments.map(payment => {
+            if (payment.id === existingPayment.id) {
+              return {
+                ...payment,
+                cashAppDetails: {
+                  ...payment.cashAppDetails,
+                  confirmationId,
+                  lastUpdated: new Date()
+                },
+                notes: notes || payment.notes
+              };
+            }
+            return payment;
+          });
+          
+          // Update the order document with the modified payments array
+          // Do NOT automatically update paymentStatus here.
+          await updateDocument(COLLECTION_NAME, orderId, {
+            payments: updatedPayments
+          });
+          
+          // Note: Payment status is NOT automatically updated to 'partial' or 'paid' here.
+          // It should be manually updated by the baker after verification.
+          // If the status was 'unpaid', the initial recordPayment call would have set it to 'pending'.
+          
+          return existingPayment.id;
+        }
+      }
+    }
+    
+    // If no existing payment found, record a new one.
+    // The recordPayment function now handles setting status to 'pending' from 'unpaid'.
+    return await recordPayment(orderId, {
+      amount,
+      method: 'cash-app',
+      date: new Date(),
+      confirmationId,
+      cashAppDetails: {
+        confirmationId,
+        lastUpdated: new Date()
+      },
+      notes
+    });
+  } catch (error) {
+    console.error('Error processing Cash App payment:', error);
+    throw new Error('Failed to process Cash App payment.');
+  }
+};

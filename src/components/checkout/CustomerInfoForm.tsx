@@ -8,6 +8,11 @@ export interface CustomerInfo {
   lastName: string;
   email: string;
   phone: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
   saveInfo: boolean;
 }
 

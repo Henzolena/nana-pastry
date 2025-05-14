@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ShoppingBag, Clock, ArrowRight, CakeSlice, RefreshCw, AlertTriangle, AlertCircle, MapPin } from 'lucide-react';
 import { getUserOrderHistory } from '@/services/order';
 import type { Order } from '@/services/order';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 
 export default function AccountOrders() {
@@ -188,7 +188,7 @@ export default function AccountOrders() {
     let score = 0;
     if (order.status === 'completed') score += 10;
     if (order.status === 'processing') score += 5;
-    if (order.status === 'confirmed') score += 3;
+    if (order.status === 'confirmed' as any) score += 3;
     
     // Score based on fields presence
     if (order.items?.length) score += order.items.length;
@@ -257,62 +257,6 @@ export default function AccountOrders() {
     }
   };
 
-  // Enhanced robust date formatter that handles various date formats
-  const formatDate = (dateValue: any): string => {
-    if (!dateValue) return 'N/A';
-    
-    try {
-      let dateObject: Date | null = null;
-      
-      // Case 1: Firestore Timestamp object with toDate method
-      if (dateValue && typeof dateValue.toDate === 'function') {
-        dateObject = dateValue.toDate();
-      }
-      // Case 2: Already a Date object
-      else if (dateValue instanceof Date) {
-        dateObject = dateValue;
-      }
-      // Case 3: String date
-      else if (typeof dateValue === 'string') {
-        dateObject = new Date(dateValue);
-      }
-      // Case 4: Timestamp number (milliseconds since epoch)
-      else if (typeof dateValue === 'number') {
-        dateObject = new Date(dateValue);
-      }
-      // Case 5: Object with seconds property (Firestore server timestamp format)
-      else if (dateValue && typeof dateValue === 'object' && 'seconds' in dateValue) {
-        // Convert seconds to milliseconds
-        const milliseconds = dateValue.seconds * 1000;
-        // Add nanoseconds if available
-        dateObject = new Date(milliseconds + (dateValue.nanoseconds ? dateValue.nanoseconds / 1000000 : 0));
-      } 
-      // Default: Log unexpected format
-      else {
-        console.warn('Unexpected date format:', dateValue);
-        return 'N/A';
-      }
-      
-      // Validate the date object
-      if (!dateObject || isNaN(dateObject.getTime())) {
-        console.warn('Invalid date created from:', dateValue);
-        return 'N/A';
-      }
-      
-      // Format the date
-      return dateObject.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      console.error('Error formatting date:', error, dateValue);
-      return 'N/A';
-    }
-  };
-
   // Helper to safely format dates with additional logging
   const safeFormatDate = (order: any, path: string): string => {
     const segments = path.split('.');
@@ -331,7 +275,7 @@ export default function AccountOrders() {
       return 'N/A';
     }
     
-    return formatDate(value);
+    return formatDate(value, { type: 'dateTimeShort' });
   };
 
   // Get order status badge style
@@ -437,7 +381,7 @@ export default function AccountOrders() {
                     </div>
                     <div className="text-muted-foreground text-xs md:text-sm flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {formatDate(order.createdAt)}
+                      {formatDate(order.createdAt, { type: 'dateTimeShort' })}
                     </div>
                     
                     {/* Display Delivery Info (updated path) */}

@@ -4,9 +4,12 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Heart, Star, Clock, Award, Phone } from 'lucide-react';
 
-import { cakes, testimonials, homeContent, contactInfo } from '@/utils/data';
+import { testimonials, homeContent, contactInfo } from '@/utils/data'; // Remove cakes import
+import { getFeaturedCakes } from '@/services/firestore'; // Import Firestore function
 import { Cake } from '@/types';
 import CakeDetailsModal from '@/components/CakeDetailsModal';
+import LoadingSpinner from '@/components/ui/LoadingSpinner'; // Import LoadingSpinner
+import { showErrorToast } from '@/utils/toast'; // Import toast for errors
 
 // Animation variants
 const fadeIn = {
@@ -33,7 +36,9 @@ const staggerContainer = {
 
 const Home = () => {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const featuredCakes = cakes.filter(cake => cake.featured);
+  const [featuredCakes, setFeaturedCakes] = useState<Cake[]>([]); // State for featured cakes
+  const [loadingFeatured, setLoadingFeatured] = useState(true); // Loading state for featured cakes
+  const [errorFeatured, setErrorFeatured] = useState<string | null>(null); // Error state for featured cakes
   
   // Set up intersection observer hooks for animations
   const [heroRef, heroInView] = useInView({ triggerOnce: true, threshold: 0.1 });
@@ -45,6 +50,26 @@ const Home = () => {
   // Add state for modal
   const [selectedCake, setSelectedCake] = useState<null | Cake>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Fetch featured cakes from Firestore on component mount
+  useEffect(() => {
+    const fetchFeaturedCakes = async () => {
+      try {
+        setLoadingFeatured(true);
+        const cakes = await getFeaturedCakes(6); // Fetch up to 6 featured cakes
+        setFeaturedCakes(cakes);
+      } catch (err) {
+        console.error("Error fetching featured cakes:", err);
+        setErrorFeatured("Failed to load featured cakes.");
+        showErrorToast("Failed to load featured cakes.");
+      } finally {
+        setLoadingFeatured(false);
+      }
+    };
+
+    fetchFeaturedCakes();
+  }, []); // Empty dependency array means this runs once on mount
+
 
   // Auto-rotate testimonials
   useEffect(() => {
@@ -67,7 +92,7 @@ const Home = () => {
       <CakeDetailsModal 
         cake={selectedCake}
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => setIsModalOpen(false)} // Corrected typo
       />
 
       {/* Hero Section */}
@@ -196,50 +221,60 @@ const Home = () => {
             </motion.h2>
           </div>
           
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-            variants={staggerContainer}
-          >
-            {featuredCakes.map((cake) => (
-              <motion.div 
-                key={cake.id}
-                className="cake-card group"
-                variants={fadeIn}
-                whileHover={{ y: -5, transition: { duration: 0.2 } }}
-              >
-                <div className="relative overflow-hidden rounded-t-xl">
-                  <img 
-                    src={cake.images[0]} 
-                    alt={cake.name}
-                    className="cake-card-image w-full h-64 object-cover"
-                  />
-                  <div className="absolute inset-0 bg-hotpink/0 group-hover:bg-hotpink/20 transition-all duration-300"></div>
-                </div>
-                
-                <div className="cake-card-content">
-                  <h3 className="text-xl font-heading text-deepbrown">{cake.name}</h3>
-                  <p className="text-warmgray-600 text-sm line-clamp-2 mt-1 mb-2">{cake.description}</p>
-                  <div className="flex justify-between items-center">
-                    {cake.sizes && cake.sizes.length > 0 && (
-                      <span className="font-heading text-rosepink text-lg">
-                        {cake.sizes.length > 1 ? 'From ' : ''}${Math.min(...cake.sizes.map(s => s.price)).toFixed(2)}
-                      </span>
-                    )}
-                    <button 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleOpenCakeDetails(cake);
-                      }}
-                      className="text-sm font-medium text-deepbrown hover:text-hotpink transition-colors duration-200"
-                    >
-                      View Details
-                    </button>
+          {loadingFeatured ? (
+            <LoadingSpinner /> // Show spinner while loading featured cakes
+          ) : errorFeatured ? (
+            <div className="text-center py-12 text-red-600">{errorFeatured}</div> // Show error
+          ) : featuredCakes.length === 0 ? (
+             <div className="text-center py-12">
+                <p className="text-warmgray-600 font-body">No featured cakes available at the moment.</p>
+             </div>
+          ) : (
+            <motion.div 
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+              variants={staggerContainer}
+            >
+              {featuredCakes.map((cake) => (
+                <motion.div 
+                  key={cake.id}
+                  className="cake-card group"
+                  variants={fadeIn}
+                  whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                >
+                  <div className="relative overflow-hidden rounded-t-xl">
+                    <img 
+                      src={cake.imageUrl} // Use imageUrl from Firestore data
+                      alt={cake.name}
+                      className="cake-card-image w-full h-64 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-hotpink/0 group-hover:bg-hotpink/20 transition-all duration-300"></div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
+                  
+                  <div className="cake-card-content">
+                    <h3 className="text-xl font-heading text-deepbrown">{cake.name}</h3>
+                    <p className="text-warmgray-600 text-sm line-clamp-2 mt-1 mb-2">{cake.description}</p>
+                    <div className="flex justify-between items-center">
+                      {cake.sizes && cake.sizes.length > 0 && (
+                        <span className="font-heading text-rosepink text-lg">
+                          {cake.sizes.length > 1 ? 'From ' : ''}${Math.min(...cake.sizes.map(s => s.price)).toFixed(2)}
+                        </span>
+                      )}
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleOpenCakeDetails(cake);
+                        }}
+                        className="text-sm font-medium text-deepbrown hover:text-hotpink transition-colors duration-200"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
           
           <motion.div 
             className="text-center mt-12"
@@ -496,4 +531,4 @@ const Home = () => {
   );
 };
 
-export default Home; 
+export default Home;

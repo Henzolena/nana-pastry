@@ -2,6 +2,9 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid'; // We'll need to install this package
 import { CartContextType, CartState, CartAction, CartItem } from '@/types/cart';
 import { Cake, CakeSize } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 
 // Default cart state
@@ -60,6 +63,15 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         subtotal,
         tax,
         total,
+      };
+    }
+    
+    case 'REPLACE_CART': {
+      // Replace the entire cart state (used when loading from server/localStorage)
+      return {
+        ...action.payload,
+        // Keep the current isOpen state to avoid UI glitches
+        isOpen: safeState.isOpen,
       };
     }
     
@@ -153,10 +165,54 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return savedCart ? JSON.parse(savedCart) : defaultCartState;
   });
 
-  // Save cart to localStorage whenever it changes
+  // Get auth context
+  const { user } = useAuth();
+
+  // Load cart from Firestore or localStorage when user signs in/out
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(state));
-  }, [state]);
+    const loadUserCart = async () => {
+      if (user) {
+        try {
+          // Get cart from Firestore if user is logged in
+          const cartRef = doc(db, 'users', user.uid, 'carts', 'current');
+          const cartSnap = await getDoc(cartRef);
+          
+          if (cartSnap.exists()) {
+            const cartData = cartSnap.data() as CartState;
+            if (cartData.items && cartData.items.length > 0) {
+              dispatch({ type: 'REPLACE_CART', payload: cartData });
+            }
+          }
+        } catch (error) {
+          console.error('Error loading cart from Firestore:', error);
+        }
+      }
+    };
+
+    loadUserCart();
+  }, [user]);
+
+  // Save cart to Firestore (for registered users) or localStorage (for guests)
+  useEffect(() => {
+    const saveCart = async () => {
+      if (user) {
+        try {
+          // Save to Firestore for registered users
+          const cartRef = doc(db, 'users', user.uid, 'carts', 'current');
+          await setDoc(cartRef, state);
+        } catch (error) {
+          console.error('Error saving cart to Firestore:', error);
+          // Fallback to localStorage if Firestore fails
+          localStorage.setItem('cart', JSON.stringify(state));
+        }
+      } else {
+        // Save to localStorage for guests
+        localStorage.setItem('cart', JSON.stringify(state));
+      }
+    };
+
+    saveCart();
+  }, [state, user]);
 
   // Add item to cart
   const addItem = (cake: Cake, size: CakeSize, quantity: number, specialInstructions?: string) => {
@@ -169,6 +225,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       size,
       image: cake.images[0], // First image as the thumbnail
       specialInstructions,
+      isCustomizable: false // Regular products are not customizable
     };
 
     dispatch({ type: 'ADD_ITEM', payload: newItem });
@@ -185,6 +242,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       size,
       image: cake.images[0], // First image as the thumbnail
       customizations,
+      isCustomizable: true // Custom items are customizable by definition
     };
 
     dispatch({ type: 'ADD_ITEM', payload: newItem });
@@ -238,4 +296,4 @@ export const useCart = (): CartContextType => {
   return context;
 };
 
-export default CartContext; 
+export default CartContext;

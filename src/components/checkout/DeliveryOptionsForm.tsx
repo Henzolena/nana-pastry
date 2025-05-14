@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getUserProfile } from '@/services/userService';
 import type { Address } from '@/services/userService';
 import { MapPin, PlusCircle, Info } from 'lucide-react';
+import { formatDate, calculateMinDate } from '@/utils/formatters';
 
 export type DeliveryMethod = 'delivery' | 'pickup';
 
@@ -20,6 +21,8 @@ export interface DeliveryInfo {
   deliveryDate?: string;
   deliveryTime?: string;
   savedAddressIndex?: number;
+  deliveryFee?: number;
+  specialInstructions?: string;
 }
 
 interface DeliveryOptionsFormProps {
@@ -63,36 +66,7 @@ const deliveryTimeSlots = [
 ];
 
 // Helper function to calculate minimum allowed pickup/delivery date based on order details
-const calculateMinDate = (cakeCategories: string[] = [], isCustomOrder: boolean = false): Date => {
-  const today = new Date();
-
-  // Default minimum lead time (48 hours for standard orders)
-  let daysToAdd = 2;
-
-  // Custom orders always require at least 7 days (1 week) lead time
-  if (isCustomOrder) {
-    daysToAdd = 7;
-  } 
-  // Wedding cakes require 21 days (3 weeks) minimum
-  else if (cakeCategories.includes('wedding')) {
-    daysToAdd = 21;
-  } 
-  // Check for celebration cakes (require 7 days)
-  else if (cakeCategories.includes('celebration')) {
-    daysToAdd = Math.max(daysToAdd, 7);
-  }
-
-  // Add the required days
-  const minDate = new Date(today);
-  minDate.setDate(today.getDate() + daysToAdd);
-
-  // If the date falls on a Sunday, move to Monday
-  if (minDate.getDay() === 0) { // Sunday
-    minDate.setDate(minDate.getDate() + 1);
-  }
-
-  return minDate;
-};
+// Note: This function has been moved to formatters.ts for reusability
 
 const DeliveryOptionsForm: React.FC<DeliveryOptionsFormProps> = ({ 
   initialData, 
@@ -247,7 +221,7 @@ const DeliveryOptionsForm: React.FC<DeliveryOptionsFormProps> = ({
         // Validate that the delivery date meets minimum lead time requirements
         const selectedDate = new Date(formData.deliveryDate);
         if (selectedDate < minDate) {
-          newErrors.deliveryDate = `Delivery date must be on or after ${minDate.toLocaleDateString()} based on your order type`;
+          newErrors.deliveryDate = `Delivery date must be on or after ${formatDate(minDate, { type: 'dateShort' })} based on your order type`;
         }
       }
       
@@ -264,7 +238,7 @@ const DeliveryOptionsForm: React.FC<DeliveryOptionsFormProps> = ({
         // Validate that the pickup date meets minimum lead time requirements
         const selectedDate = new Date(formData.pickupDate);
         if (selectedDate < minDate) {
-          newErrors.pickupDate = `Pickup date must be on or after ${minDate.toLocaleDateString()} based on your order type`;
+          newErrors.pickupDate = `Pickup date must be on or after ${formatDate(minDate, { type: 'dateShort' })} based on your order type`;
         }
       }
 
@@ -563,7 +537,7 @@ const DeliveryOptionsForm: React.FC<DeliveryOptionsFormProps> = ({
                 <p className="mt-1 text-sm text-red-600">{errors.deliveryDate}</p>
               )}
               <p className="mt-1 text-xs text-gray-500">
-                Based on your order, earliest available delivery: {minDate.toLocaleDateString()}
+                Based on your order, earliest available delivery: {formatDate(minDate, { type: 'dateShort' })}
               </p>
             </div>
 
@@ -643,7 +617,7 @@ const DeliveryOptionsForm: React.FC<DeliveryOptionsFormProps> = ({
                 <p className="mt-1 text-sm text-red-600">{errors.pickupDate}</p>
               )}
               <p className="mt-1 text-xs text-gray-500">
-                Based on your order, earliest available pickup: {minDate.toLocaleDateString()}
+                Based on your order, earliest available pickup: {formatDate(minDate, { type: 'dateShort' })}
               </p>
             </div>
 

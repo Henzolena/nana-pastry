@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Import useEffect
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Search, Filter, ChevronDown, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { cakes } from '@/utils/data';
+import { getAllCakes } from '@/services/firestore'; // Import Firestore function
 import { Cake, CakeCategory } from '@/types';
 import CakeDetailsModal from '@/components/CakeDetailsModal';
 import FavoriteButton from '@/components/FavoriteButton';
+import LoadingSpinner from '@/components/ui/LoadingSpinner'; // Import LoadingSpinner
+import { showErrorToast } from '@/utils/toast'; // Import toast for errors
 
 // Animation variants
 const fadeIn = {
@@ -32,17 +34,17 @@ const staggerContainer = {
   }
 };
 
-// Generate categories dynamically from cakes data
-const uniqueCategories = Array.from(new Set(cakes.map(cake => cake.category)));
+// Generate categories dynamically from cakes data (will be updated after fetching)
 const categories: { label: string; value: CakeCategory | 'all' }[] = [
   { label: 'All Cakes', value: 'all' },
-  ...uniqueCategories.map(category => ({
-    label: category.charAt(0).toUpperCase() + category.slice(1), // Capitalize category name
-    value: category,
-  })),
+  // Categories will be added here after fetching cakes
 ];
 
 const Products = () => {
+  const [cakes, setCakes] = useState<Cake[]>([]); // State to hold fetched cakes
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState<string | null>(null); // Error state
+
   const [selectedCategory, setSelectedCategory] = useState<CakeCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -54,6 +56,38 @@ const Products = () => {
   // Set up intersection observer hooks for animation
   const [headerRef, headerInView] = useInView({ triggerOnce: true, threshold: 0.1 });
   const [cakesRef, cakesInView] = useInView({ triggerOnce: true, threshold: 0.1 });
+
+  // Fetch cakes from Firestore on component mount
+  useEffect(() => {
+    const fetchCakes = async () => {
+      try {
+        setLoading(true);
+        // Fetch all cakes from Firestore
+        const fetchedCakes = await getAllCakes(); // Use the Firestore function
+        // Filter for only available cakes for public display
+        const availableCakes = fetchedCakes.filter(cake => cake.isAvailable);
+        setCakes(availableCakes);
+        // Dynamically generate categories from fetched cakes
+        const uniqueCategories = Array.from(new Set(availableCakes.map(cake => cake.category)));
+        categories.splice(1, categories.length - 1); // Clear existing categories (except 'All')
+        uniqueCategories.forEach(category => {
+            categories.push({
+                label: category.charAt(0).toUpperCase() + category.slice(1),
+                value: category,
+            });
+        });
+
+      } catch (err) {
+        console.error("Error fetching cakes:", err);
+        setError("Failed to load cakes. Please try again later.");
+        showErrorToast("Failed to load cakes.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCakes();
+  }, []); // Empty dependency array means this runs once on mount
 
   // Filter cakes based on category and search
   const filteredCakes = cakes.filter((cake) => {
@@ -73,6 +107,32 @@ const Products = () => {
     setSelectedCake(cake);
     setIsModalOpen(true);
   };
+
+  if (loading) {
+    return <LoadingSpinner />; // Show spinner while loading
+  }
+
+  if (error) {
+    return <div className="text-center py-12 text-red-600">{error}</div>; // Show error message
+  }
+
+  // If no cakes found after loading and no error
+  if (cakes.length === 0) {
+     return (
+        <div className="text-center py-12">
+            <div className="bg-white/80 max-w-md mx-auto p-8 rounded-xl shadow-soft-pink">
+                <h3 className="text-xl font-heading text-deepbrown mb-3">No cakes available</h3>
+                <p className="text-warmgray-600 mb-6">
+                    There are currently no cakes available in our collection. Please check back later or request a custom design.
+                </p>
+                 <Link to="/request-custom-design" className="btn btn-primary">
+                    Request Custom Design
+                 </Link>
+            </div>
+        </div>
+     );
+  }
+
 
   return (
     <div className="">
@@ -269,7 +329,7 @@ const Products = () => {
                   >
                     <div className="relative overflow-hidden rounded-t-xl">
                       <img 
-                        src={cake.images[0]} 
+                        src={cake.imageUrl} // Use imageUrl from Firestore data
                         alt={cake.name}
                         className="cake-card-image w-full h-72 object-cover"
                       />
@@ -316,13 +376,13 @@ const Products = () => {
               </motion.div>
 
               {/* Load more button, can be implemented for pagination */}
-              {filteredCakes.length > 9 && (
+              {/* {filteredCakes.length > 9 && ( // Adjust condition based on actual pagination logic
                 <div className="mt-12 text-center">
                   <button className="btn btn-secondary">
                     Load More
                   </button>
                 </div>
-              )}
+              )} */}
             </>
           ) : (
             <div className="text-center py-12">
@@ -361,8 +421,8 @@ const Products = () => {
                 <p className="title-accent">Don't See What You Need?</p>
                 <h2 className="text-2xl md:text-3xl font-heading text-deepbrown mb-4">Custom Cake Design</h2>
                 <p className="text-warmgray-700 mb-6">
-                  Let us create a unique cake tailored to your vision and requirements. Our cake artists
-                  love bringing special requests to life, no matter how simple or elaborate.
+                  Our talented pastry chefs can create a customized cake to perfectly match your vision and occasion.
+                  Each creation is designed to make your special moments unforgettable.
                 </p>
                 <Link to="/request-custom-design" className="btn btn-primary">
                   Request Custom Design
@@ -385,4 +445,4 @@ const Products = () => {
   );
 };
 
-export default Products; 
+export default Products;

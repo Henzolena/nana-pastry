@@ -4,16 +4,19 @@ import { cn } from '@/utils/cn';
 import { 
   CreditCard, 
   DollarSign,
-  // CheckCircle2
+  Smartphone
 } from 'lucide-react';
 
 export interface PaymentInfo {
-  method: 'credit-card' | 'cash';
+  method: 'credit-card' | 'cash' | 'cash-app';
   cardDetails?: {
     number?: string;
     name?: string;
     expiry?: string;
     cvc?: string;
+  };
+  cashAppDetails?: {
+    confirmationId?: string;
   };
 }
 
@@ -21,6 +24,7 @@ interface PaymentMethodProps {
   initialData?: PaymentInfo;
   onSubmit: (data: PaymentInfo) => void;
   onBack: () => void;
+  loading?: boolean;
 }
 
 const defaultFormData: PaymentInfo = {
@@ -30,6 +34,9 @@ const defaultFormData: PaymentInfo = {
     name: '',
     expiry: '',
     cvc: ''
+  },
+  cashAppDetails: {
+    confirmationId: ''
   }
 };
 
@@ -50,6 +57,14 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ initialData, onSubmit, on
             [child]: value,
           },
         }));
+      } else if (parent === 'cashAppDetails') {
+        setFormData((prev) => ({
+          ...prev,
+          cashAppDetails: {
+            ...(prev.cashAppDetails ?? {}),
+            [child]: value,
+          },
+        }));
       }
     } else {
       setFormData((prev) => ({ 
@@ -59,7 +74,13 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ initialData, onSubmit, on
     }
     
     // Clear error when field is edited
-    if (errors[name]) {
+    if (name.includes('.')) {
+      // For nested fields (e.g., 'cashAppDetails.confirmationId')
+      if (errors[name]) {
+        setErrors((prev) => ({ ...prev, [name]: '' }));
+      }
+    } else if (errors[name]) {
+      // For regular fields
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
@@ -88,6 +109,14 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ initialData, onSubmit, on
         newErrors['cardDetails.cvc'] = 'CVC is required';
       } else if (!/^\d{3,4}$/.test(formData.cardDetails.cvc)) {
         newErrors['cardDetails.cvc'] = 'CVC must be 3 or 4 digits';
+      }
+    } else if (formData.method === 'cash-app') {
+      if (!formData.cashAppDetails?.confirmationId) {
+        newErrors['cashAppDetails.confirmationId'] = 'Confirmation ID/Receipt is required';
+      } else if (formData.cashAppDetails.confirmationId.trim().length < 5) {
+        newErrors['cashAppDetails.confirmationId'] = 'Confirmation ID should be at least 5 characters';
+      } else if (!/^[a-zA-Z0-9#-]*$/.test(formData.cashAppDetails.confirmationId)) {
+        newErrors['cashAppDetails.confirmationId'] = 'Confirmation ID contains invalid characters';
       }
     }
     
@@ -144,7 +173,7 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ initialData, onSubmit, on
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Payment Method Options */}
         <div>
-          <RadioGroup value={formData.method} onChange={method => setFormData({ ...formData, method: method as 'credit-card' | 'cash' })}>
+          <RadioGroup value={formData.method} onChange={method => setFormData({ ...formData, method: method as 'credit-card' | 'cash' | 'cash-app' })}>
             <RadioGroup.Label className="block text-sm font-medium text-gray-700 mb-3">
               Select Payment Method
             </RadioGroup.Label>
@@ -170,6 +199,33 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ initialData, onSubmit, on
                         <div>
                           <p className="font-medium text-gray-900">Credit Card</p>
                           <p className="text-sm text-gray-500">Pay with your credit or debit card</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </RadioGroup.Option>
+              
+              <RadioGroup.Option value="cash-app">
+                {({ checked }) => (
+                  <div 
+                    className={cn(
+                      "border rounded-lg p-4 cursor-pointer",
+                      checked ? "border-hotpink bg-hotpink/5 ring-1 ring-hotpink" : "border-gray-200 hover:border-gray-300"
+                    )}
+                  >
+                    <div className="flex items-center">
+                      <div className={cn(
+                        "w-5 h-5 rounded-full border flex items-center justify-center mr-3",
+                        checked ? "border-hotpink" : "border-gray-300"
+                      )}>
+                        {checked && <div className="w-2.5 h-2.5 rounded-full bg-hotpink" />}
+                      </div>
+                      <div className="flex items-center">
+                        <Smartphone className="mr-2 h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="font-medium text-gray-900">Cash App</p>
+                          <p className="text-sm text-gray-500">Pay with Cash App to $Ribka Melka</p>
                         </div>
                       </div>
                     </div>
@@ -206,6 +262,57 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ initialData, onSubmit, on
             </div>
           </RadioGroup>
         </div>
+        
+        {/* Cash App Details Form */}
+        {formData.method === 'cash-app' && (
+          <div className="space-y-4 p-5 border border-gray-200 rounded-lg bg-gray-50">
+            <h3 className="text-lg font-medium">Cash App Payment</h3>
+            
+            <div className="bg-blue-50 p-4 rounded-md mb-4">
+              <p className="text-sm text-blue-700 mb-2 font-medium">
+                Please follow these steps to complete your payment:
+              </p>
+              <ol className="list-decimal ml-5 text-sm text-blue-700 space-y-1">
+                <li>Open your Cash App</li>
+                <li>Send payment to <span className="font-bold">$Ribka Melka</span></li>
+                <li>Include your name and "Cake Order" in the payment notes</li>
+                <li>After payment, copy the confirmation ID or receipt number from your Cash App receipt</li>
+                <li>Enter this confirmation ID in the field below</li>
+              </ol>
+              <p className="text-sm text-blue-700 mt-2 font-medium">
+                You can find your confirmation ID in the Cash App receipt, usually labeled as 
+                "Confirmation #" or "Receipt ID"
+              </p>
+            </div>
+            
+            <div>
+              <label htmlFor="confirmationId" className="block text-sm font-medium text-gray-700 mb-1">
+                Confirmation ID / Receipt Number
+              </label>
+              <input
+                type="text"
+                id="confirmationId"
+                name="cashAppDetails.confirmationId"
+                value={formData.cashAppDetails?.confirmationId || ''}
+                onChange={handleChange}
+                placeholder="Enter the payment confirmation ID (e.g., #C4R7B2L5)"
+                autoComplete="off"
+                className={cn(
+                  "block w-full rounded-md border-gray-300 shadow-sm focus:border-hotpink focus:ring-hotpink sm:text-sm font-mono tracking-wide",
+                  errors['cashAppDetails.confirmationId'] ? "border-red-500" : ""
+                )}
+                maxLength={30}
+              />
+              {errors['cashAppDetails.confirmationId'] && (
+                <p className="mt-1 text-sm text-red-600">{errors['cashAppDetails.confirmationId']}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                The confirmation ID helps us verify your payment and process your order faster.
+                You can update this later if needed.
+              </p>
+            </div>
+          </div>
+        )}
         
         {/* Credit Card Form */}
         {formData.method === 'credit-card' && (
@@ -344,4 +451,4 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ initialData, onSubmit, on
   );
 };
 
-export default PaymentMethod; 
+export default PaymentMethod;

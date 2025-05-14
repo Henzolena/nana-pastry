@@ -9,6 +9,7 @@ export interface CartItem {
   size: CakeSize;
   image: string;
   specialInstructions?: string;
+  isCustomizable?: boolean;
   customizations?: {
     selectedCakeId: string;
     flavor: string;
@@ -36,6 +37,7 @@ export type CartAction =
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
   | { type: 'UPDATE_ITEM_CUSTOMIZATIONS'; payload: { id: string; customizations: CartItem['customizations'] } }
   | { type: 'CLEAR_CART' }
+  | { type: 'REPLACE_CART'; payload: CartState }
   | { type: 'TOGGLE_CART'; payload?: boolean }; // optional boolean to force open/close
 
 export interface CartContextType {
@@ -47,4 +49,4 @@ export interface CartContextType {
   updateItemCustomizations: (id: string, customizations: CartItem['customizations']) => void;
   clearCart: () => void;
   toggleCart: (forceState?: boolean) => void;
-} 
+}

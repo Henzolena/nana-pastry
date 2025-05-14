@@ -6,22 +6,28 @@ import UserProfile from '@/components/auth/UserProfile';
 import AccountOrders from '@/components/account/AccountOrders';
 import AccountSettings from '@/components/account/AccountSettings';
 import AccountFavorites from '@/components/account/AccountFavorites';
+import AccountDashboard from '@/components/account/AccountDashboard'; // Import AccountDashboard
+import { LayoutDashboard } from 'lucide-react'; // Import icon
 
 // Tab type definition
-type TabType = 'profile' | 'orders' | 'settings' | 'favorites';
+type TabType = 'dashboard' | 'profile' | 'orders' | 'settings' | 'favorites'; // Add 'dashboard' tab
 
 export default function Account() {
-  const { user } = useAuth();
+  const { user, role } = useAuth(); // Get role from useAuth
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabType>('profile');
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard'); // Default to 'dashboard'
 
   // Parse the tab from the URL if available (e.g., /account?tab=orders)
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const tab = searchParams.get('tab');
-    if (tab && ['profile', 'orders', 'settings', 'favorites'].includes(tab)) {
+    // Include 'dashboard' in the valid tabs check
+    if (tab && ['dashboard', 'profile', 'orders', 'settings', 'favorites'].includes(tab)) {
       setActiveTab(tab as TabType);
+    } else if (!tab) {
+        // If no tab parameter, default to dashboard
+        setActiveTab('dashboard');
     }
   }, [location]);
 
@@ -55,10 +61,24 @@ export default function Account() {
               <div>
                 <p className="font-medium text-gray-900">{user.displayName || 'Customer'}</p>
                 <p className="text-sm text-gray-500">{user.email}</p>
+                {role && <p className="text-sm text-gray-500 capitalize">Role: {role}</p>} {/* Display role */}
               </div>
             </div>
             
             <nav className="flex flex-col">
+               {/* Dashboard Link */}
+              <button 
+                onClick={() => handleTabChange('dashboard')}
+                className={`flex items-center space-x-3 p-3 rounded-md transition ${
+                  activeTab === 'dashboard' 
+                    ? 'bg-hotpink text-white' 
+                    : 'hover:bg-rosepink/10 text-gray-700'
+                }`}
+              >
+                <LayoutDashboard className="w-5 h-5" />
+                <span>Dashboard</span>
+              </button>
+              {/* Profile Link */}
               <button 
                 onClick={() => handleTabChange('profile')}
                 className={`flex items-center space-x-3 p-3 rounded-md transition ${
@@ -67,10 +87,10 @@ export default function Account() {
                     : 'hover:bg-rosepink/10 text-gray-700'
                 }`}
               >
-                <Cake className="w-5 h-5" />
+                <Cake className="w-5 h-5" /> {/* Using Cake icon for Profile, maybe change? */}
                 <span>Profile</span>
               </button>
-              
+              {/* Order History Link */}
               <button 
                 onClick={() => handleTabChange('orders')}
                 className={`flex items-center space-x-3 p-3 rounded-md transition ${
@@ -82,7 +102,7 @@ export default function Account() {
                 <ShoppingBag className="w-5 h-5" />
                 <span>Order History</span>
               </button>
-              
+              {/* Favorites Link */}
               <button 
                 onClick={() => handleTabChange('favorites')}
                 className={`flex items-center space-x-3 p-3 rounded-md transition ${
@@ -94,7 +114,7 @@ export default function Account() {
                 <Heart className="w-5 h-5" />
                 <span>Favorites</span>
               </button>
-              
+              {/* Account Settings Link */}
               <button 
                 onClick={() => handleTabChange('settings')}
                 className={`flex items-center space-x-3 p-3 rounded-md transition ${
@@ -113,6 +133,8 @@ export default function Account() {
         {/* Content */}
         <div className="md:w-3/4">
           <div className="bg-white rounded-lg shadow-md p-6">
+            {/* Render content based on activeTab */}
+            {activeTab === 'dashboard' && <AccountDashboard />}
             {activeTab === 'profile' && <UserProfile />}
             {activeTab === 'orders' && <AccountOrders />}
             {activeTab === 'settings' && <AccountSettings />}
@@ -122,4 +144,4 @@ export default function Account() {
       </div>
     </div>
   );
-} 
+}

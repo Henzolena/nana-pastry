@@ -6,11 +6,26 @@ import { cn } from '@/utils/cn'
 import { companyInfo, contactInfo } from '@/utils/data'
 import CartIcon from '@/components/cart/CartIcon'
 import { useAuth } from '@/contexts/AuthContext'
+import { LogOut } from 'lucide-react'; // Import LogOut icon
+import { showErrorToast, showSuccessToast } from '@/utils/toast'; // Import toast utilities
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const { user } = useAuth()
+  const { user, logout } = useAuth(); // Get logout function from useAuth
+  const navigate = useNavigate(); // Get navigate function
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      showSuccessToast('Logged out successfully.');
+      navigate('/auth'); // Redirect to login page after logout
+    } catch (error) {
+      console.error("Logout error from Navbar:", error);
+      showErrorToast('Failed to log out. Please try again.');
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -57,6 +72,7 @@ const Navbar = () => {
             className={({ isActive }) => 
               `nav-link ${isActive ? 'text-hotpink after:w-full' : ''}`
             }
+            state={{ fromPublicLink: true }} // Use a general public link state parameter
           >
             Home
           </NavLink>
@@ -65,6 +81,7 @@ const Navbar = () => {
             className={({ isActive }) => 
               `nav-link ${isActive ? 'text-hotpink after:w-full' : ''}`
             }
+            state={{ fromPublicLink: true }} // Add state parameter
           >
             About
           </NavLink>
@@ -73,6 +90,7 @@ const Navbar = () => {
             className={({ isActive }) => 
               `nav-link ${isActive ? 'text-hotpink after:w-full' : ''}`
             }
+            state={{ fromPublicLink: true }} // Add state parameter
           >
             Our Cakes
           </NavLink>
@@ -81,6 +99,7 @@ const Navbar = () => {
             className={({ isActive }) => 
               `nav-link ${isActive ? 'text-hotpink after:w-full' : ''}`
             }
+            state={{ fromPublicLink: true }} // Add state parameter
           >
             Contact
           </NavLink>
@@ -89,6 +108,7 @@ const Navbar = () => {
             className={({ isActive }) => 
               `nav-link ${isActive ? 'text-hotpink after:w-full' : ''}`
             }
+            state={{ fromPublicLink: true }} // Add state parameter
           >
             Custom Order
           </NavLink>
@@ -126,17 +146,28 @@ const Navbar = () => {
           {/* Cart Icon */}
           <CartIcon />
 
-          {/* Login/Profile Links */}
+          {/* Login/Profile/Logout Links */}
           {user ? (
-            <NavLink 
-              to="/profile" 
-              className={({ isActive }) => 
-                `nav-link flex items-center ${isActive ? 'text-hotpink after:w-full' : ''}`
-              }
-            >
-              <User className="w-4 h-4 mr-1" />
-              Profile
-            </NavLink>
+            <>
+              {/* Profile Link (can be role-aware later if needed) */}
+              <NavLink 
+                to="/account" // Link to the general account page/dashboard
+                className={({ isActive }) => 
+                  `nav-link flex items-center ${isActive ? 'text-hotpink after:w-full' : ''}`
+                }
+              >
+                <User className="w-4 h-4 mr-1" />
+                Account
+              </NavLink>
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="nav-link flex items-center text-deepbrown hover:text-hotpink transition-colors"
+              >
+                <LogOut className="w-4 h-4 mr-1" />
+                Logout
+              </button>
+            </>
           ) : (
             <NavLink 
               to="/auth" 
@@ -175,6 +206,7 @@ const Navbar = () => {
                 `text-lg py-2 ${isActive ? 'text-hotpink font-medium' : 'text-deepbrown'}`
               }
               onClick={() => setIsOpen(false)}
+              state={{ fromPublicLink: true }} // Use a general public link state parameter
             >
               Home
             </NavLink>
@@ -184,6 +216,7 @@ const Navbar = () => {
                 `text-lg py-2 ${isActive ? 'text-hotpink font-medium' : 'text-deepbrown'}`
               }
               onClick={() => setIsOpen(false)}
+              state={{ fromPublicLink: true }} // Add state parameter
             >
               About
             </NavLink>
@@ -193,6 +226,7 @@ const Navbar = () => {
                 `text-lg py-2 ${isActive ? 'text-hotpink font-medium' : 'text-deepbrown'}`
               }
               onClick={() => setIsOpen(false)}
+              state={{ fromPublicLink: true }} // Add state parameter
             >
               Our Cakes
             </NavLink>
@@ -202,6 +236,7 @@ const Navbar = () => {
                 `text-lg py-2 ${isActive ? 'text-hotpink font-medium' : 'text-deepbrown'}`
               }
               onClick={() => setIsOpen(false)}
+              state={{ fromPublicLink: true }} // Add state parameter
             >
               Contact
             </NavLink>
@@ -211,6 +246,7 @@ const Navbar = () => {
                 `text-lg py-2 ${isActive ? 'text-hotpink font-medium' : 'text-deepbrown'}`
               }
               onClick={() => setIsOpen(false)}
+              state={{ fromPublicLink: true }} // Add state parameter
             >
               Custom Order
             </NavLink>
@@ -229,18 +265,29 @@ const Navbar = () => {
               Cart
             </NavLink>
             
-            {/* Login/Profile Link */}
+            {/* Login/Profile/Logout Links */}
             {user ? (
-              <NavLink 
-                to="/profile" 
-                className={({ isActive }) => 
-                  `text-lg px-4 py-2 rounded-full ${isActive ? 'bg-hotpink text-white' : 'bg-rosepink/20 text-deepbrown'} flex items-center`
-                }
-                onClick={() => setIsOpen(false)}
-              >
-                <User className="w-5 h-5 mr-2" />
-                Profile
-              </NavLink>
+              <>
+                {/* Account Link */}
+                <NavLink 
+                  to="/account" 
+                  className={({ isActive }) => 
+                    `text-lg px-4 py-2 rounded-full ${isActive ? 'bg-hotpink text-white' : 'bg-rosepink/20 text-deepbrown'} flex items-center`
+                  }
+                  onClick={() => setIsOpen(false)}
+                >
+                  <User className="w-5 h-5 mr-2" />
+                  Account
+                </NavLink>
+                 {/* Logout Button */}
+                <button
+                  onClick={() => { handleLogout(); setIsOpen(false); }} // Close menu on logout
+                  className="text-lg px-4 py-2 rounded-full bg-rosepink/20 text-deepbrown hover:bg-rosepink/30 flex items-center"
+                >
+                  <LogOut className="w-5 h-5 mr-2" />
+                  Logout
+                </button>
+              </>
             ) : (
               <NavLink 
                 to="/auth" 
@@ -269,4 +316,4 @@ const Navbar = () => {
   )
 }
 
-export default Navbar 
+export default Navbar
