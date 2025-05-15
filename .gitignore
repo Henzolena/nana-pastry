@@ -1,26 +1,63 @@
-# Node / Dependencies
-node_modules/
-dist/
-build/
-coverage/
-*.log
-.env
-.env.local
-.env.*.local
-
-# Vite
-.vite/
-# If you have a .env file in your frontend directory that's specific to Vite
-# and not already covered by the general .env rules, you might add:
-# frontend/.env
-# frontend/.env.local
-# frontend/.env.*.local
-
-# OS / IDE
+# General
 .DS_Store
 Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies / Lock files (usually committed, but can be ignored in some strategies)
+# package-lock.json # Keep this unless specific reason not to
+# yarn.lock # Keep this unless specific reason not to
+# pnpm-lock.yaml # Keep this unless specific reason not to
+
+# Node / Dependencies
+**/node_modules/
+/node_modules
+
+# Build output
+**/dist/
+/dist
+**/build/
+/build
+coverage/
+
+# Environment variables - IMPORTANT
+# Ignore all .env files in any directory
+**/.env
+**/.env.local
+**/.env.*.local
+
+# But DO NOT ignore .env.example files (these are templates and should be committed)
+!**/.env.example
+!**/.env.*.example
+
+# Specific sensitive files
+# Firebase Admin SDK key in backend
+backend/nana-pastry-firebase-adminsdk-fbsvc-0ec06bff26.json
+# Any other *.json files containing secrets, e.g., if you download other service account keys
+# Example: backend/src/config/*.credentials.json
+
+# Frontend specific
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+frontend/.vite/
+# frontend/dist/ # Covered by **/dist/
+
+# Backend specific
+# backend/.env # Covered by general .env
+# backend/dist/ # Covered by **/dist/
+
+# IDEs and editors
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 *.suo
 *.user
 *.userosscache
