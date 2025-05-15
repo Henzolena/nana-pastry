@@ -1,0 +1,302 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 20 33% 98%;
+    --foreground: 300 7% 8%;
+    
+    --primary: 350 100% 87%;
+    --primary-foreground: 300 7% 8%;
+    
+    --secondary: 330 90% 70%;
+    --secondary-foreground: 300 7% 8%;
+    
+    --accent: 45 100% 50%;
+    --accent-foreground: 20 10% 10%;
+    
+    --muted: 20 10% 96%;
+    --muted-foreground: 20 10% 40%;
+    
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 20 0% 100%;
+    
+    --border: 20 10% 90%;
+    --input: 20 10% 90%;
+    --ring: 350 100% 87%;
+    
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    /* Remove the border-border class that doesn't exist */
+  }
+  body {
+    @apply bg-ivory text-deepbrown font-body;
+    background-image: linear-gradient(to bottom, rgba(255, 230, 240, 0.2), rgba(255, 250, 250, 0.4));
+    background-attachment: fixed;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading text-deepbrown;
+  }
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl mb-6 font-bold;
+  }
+  h2 {
+    @apply text-3xl md:text-4xl mb-4 font-semibold;
+  }
+  h3 {
+    @apply text-2xl md:text-3xl mb-4 font-semibold;
+  }
+  p {
+    @apply leading-7 text-warmgray-700 mb-4;
+  }
+}
+
+@layer components {
+  .container {
+    @apply px-4 mx-auto max-w-7xl;
+  }
+  
+  .btn {
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-base font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  
+  .btn-primary {
+    @apply bg-hotpink text-white hover:bg-rosepink shadow-soft-pink hover:shadow-hover-glow;
+  }
+  
+  .btn-secondary {
+    @apply bg-ivory text-deepbrown border border-softgold hover:bg-softgold/10 shadow-soft-gold;
+  }
+  
+  .card {
+    @apply bg-white/90 rounded-lg overflow-hidden shadow-soft-pink border-thin border-blush/40;
+  }
+  
+  .nav-link {
+    @apply relative px-3 py-2 text-warmgray-800 hover:text-hotpink transition-colors duration-200;
+  }
+  
+  .nav-link::after {
+    @apply content-[''] absolute bottom-0 left-0 w-0 h-0.5 bg-softgold transition-all duration-300;
+  }
+  
+  .nav-link:hover::after {
+    @apply w-full;
+  }
+  
+  .section {
+    @apply py-16 md:py-24;
+  }
+  
+  .title-accent {
+    @apply font-script text-rosepink text-xl md:text-2xl mb-2;
+  }
+  
+  .cake-card {
+    @apply rounded-xl overflow-hidden transition-all duration-300 hover:shadow-soft-pink;
+  }
+  
+  .cake-card-image {
+    @apply aspect-square object-cover transition-transform duration-500 hover:scale-105;
+  }
+  
+  .cake-card-content {
+    @apply p-4 bg-gradient-to-b from-white/80 to-pinklight/40 border-t border-t-softgold/20;
+  }
+  
+  /* Glass effect */
+  .glass {
+    @apply bg-white/40 backdrop-blur-md border border-white/20 shadow-glass;
+  }
+  
+  /* Gold shimmer effect */
+  .gold-shimmer {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 248, 220, 0.2), rgba(255, 215, 0, 0.1));
+    background-size: 200% 200%;
+    animation: shimmer 3s infinite linear;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: 0% 0%; }
+    50% { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+  }
+  
+  /* Form Styles */
+  .form-label {
+    @apply block text-deepbrown font-medium mb-1.5 text-sm;
+  }
+  
+  .form-input, .form-select, .form-textarea {
+    @apply w-full px-4 py-2.5 rounded-lg bg-white/80 
+           border border-warmgray-200 shadow-sm 
+           focus:outline-none focus:ring-2 focus:ring-hotpink/40 focus:border-rosepink
+           transition duration-200;
+  }
+  
+  .form-textarea {
+    @apply resize-none min-h-[100px];
+  }
+  
+  .form-select {
+    @apply appearance-none bg-no-repeat bg-right pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d4a9b7' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-size: 1.25rem;
+  }
+  
+  .flavor-checkbox {
+    @apply p-3 rounded-md border cursor-pointer text-center text-sm 
+           font-medium flex items-center justify-center min-h-[42px]
+           hover:border-rosepink hover:bg-rosepink/10 
+           transition-all duration-200;
+  }
+  
+  /* Shadow effects */
+  .shadow-soft-pink {
+    box-shadow: 0 4px 20px -2px rgba(244, 114, 182, 0.15);
+  }
+  
+  /* Button animations */
+  .btn {
+    @apply relative overflow-hidden;
+  }
+  
+  .btn:after {
+    content: '';
+    @apply absolute inset-0 bg-white/0 transition-all duration-300;
+  }
+  
+  .btn:hover:after {
+    @apply bg-white/10;
+  }
+  
+  .btn:active:after {
+    @apply bg-black/10;
+  }
+  
+  /* Form submission animation */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+  
+  .animate-pulse {
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes width {
+    from {
+      width: 0;
+    }
+    to {
+      width: 100%;
+    }
+  }
+  
+  .animate-width {
+    animation: width 3s linear infinite;
+  }
+  
+  /* Background gradients */
+  .bg-pink-gradient {
+    background: linear-gradient(135deg, rgba(255, 241, 242, 0.8) 0%, rgba(255, 245, 248, 0.9) 100%);
+  }
+  
+  .bg-luxury-gradient {
+    background: linear-gradient(135deg, rgba(255, 248, 240, 0.9) 0%, rgba(253, 242, 248, 0.8) 100%);
+  }
+}
+
+/* Responsive design helper */
+@layer utilities {
+  .section {
+    @apply py-12 md:py-16 lg:py-20;
+  }
+  
+  /* Improve placeholder styles */
+  ::placeholder {
+    @apply text-warmgray-400 text-sm;
+  }
+}
+
+/* Updated Smoke Animation */
+@keyframes riseSmoke {
+  0% {
+    transform: translate(0px, 20px) scale(0.95);
+    opacity: 0;
+  }
+  15% {
+    /* Fade in more gradually */
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate(5px, -40px) scale(1);
+    opacity: 0.6; /* Hold opacity longer */
+  }
+  85% {
+    transform: translate(-5px, -90px) scale(1.02);
+    opacity: 0.3; /* Start fading out earlier */
+  }
+  100% {
+    transform: translate(0px, -130px) scale(1.05);
+    opacity: 0;
+  }
+}
+
+.smoke-svg {
+  bottom: 0;
+  /* Remove filter style from here if applied via inline style in JSX */
+}
+
+.smoke-wisp {
+  transform-origin: 50% 100%;
+  will-change: transform, opacity;
+}
+
+/* Varied timings and delays for more randomness */
+.smoke-wisp-1 {
+  animation: riseSmoke 30s linear infinite 0.5s;
+}
+
+.smoke-wisp-2 {
+  animation: riseSmoke 40s linear infinite 5s;
+}
+
+.smoke-wisp-3 {
+  animation: riseSmoke 28s linear infinite 9s;
+}
+
+.smoke-wisp-4 {
+  animation: riseSmoke 35s linear infinite 12s;
+}
+
+/* Other Styles */
+/* Example: Ensure body has no margin if needed */
+body {
+  /* existing styles */
+}
+
+/* Added Shake Animation */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px) rotate(-5deg); }
+  20%, 40%, 60%, 80% { transform: translateX(3px) rotate(5deg); }
+}
+
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Apply shake on group hover specifically for the icon */
+.group:hover .group-hover\:animate-shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+} 

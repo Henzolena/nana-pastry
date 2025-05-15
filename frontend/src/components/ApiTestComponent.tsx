@@ -1,0 +1,106 @@
+import { useEffect, useState } from 'react';
+import { apiGet } from '../services/apiService';
+import { useAuth } from '../contexts/AuthContext';
+
+export function ApiTestComponent() {
+  const { user } = useAuth();
+  const [publicApiStatus, setPublicApiStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [authApiStatus, setAuthApiStatus] = useState<'loading' | 'success' | 'error' | 'not-tested'>('not-tested');
+  const [publicErrorMessage, setPublicErrorMessage] = useState<string | null>(null);
+  const [authErrorMessage, setAuthErrorMessage] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const testPublicApi = async () => {
+      try {
+        console.log('Testing public API connection to', import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000');
+        // Test a simple public GET endpoint
+        const response = await apiGet('/');
+        console.log('API public response:', response);
+        setPublicApiStatus('success');
+      } catch (error) {
+        console.error('Public API test error details:', error);
+        setPublicApiStatus('error');
+        setPublicErrorMessage(error instanceof Error ? error.message : String(error));
+        console.error('Public API test failed:', error);
+      }
+    };
+    
+    testPublicApi();
+  }, []);
+  
+  useEffect(() => {
+    if (!user) return;
+    
+    const testAuthenticatedApi = async () => {
+      setAuthApiStatus('loading');
+      try {
+        // Test the authentication check endpoint
+        const response = await apiGet('/auth/check-auth');
+        console.log('Auth check response:', response);
+        setAuthApiStatus('success');
+      } catch (error) {
+        setAuthApiStatus('error');
+        setAuthErrorMessage(error instanceof Error ? error.message : String(error));
+        console.error('Authenticated API test failed:', error);
+      }
+    };
+    
+    testAuthenticatedApi();
+  }, [user]);
+  
+  return (
+    <div className="w-full border rounded-md shadow-sm p-4 bg-white">
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold">API Connection Test</h2>
+        <p className="text-sm text-gray-500">Test connectivity between the frontend and backend</p>
+      </div>
+      
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Public API Test */}
+          <div className="p-3 border rounded">
+            <h3 className="font-medium">Public API</h3>
+            <div className="my-2">
+              Status: {' '}
+              {publicApiStatus === 'loading' && <span className="text-blue-500">Testing connection...</span>}
+              {publicApiStatus === 'success' && <span className="text-green-500">Connected successfully</span>}
+              {publicApiStatus === 'error' && <span className="text-red-500">Connection failed</span>}
+            </div>
+            {publicErrorMessage && (
+              <div className="text-red-500 text-sm mt-1">
+                <p>Error: {publicErrorMessage}</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Authenticated API Test */}
+          <div className="p-3 border rounded">
+            <h3 className="font-medium">Authenticated API</h3>
+            <div className="my-2">
+              Status: {' '}
+              {authApiStatus === 'not-tested' && <span className="text-gray-500">Not logged in</span>}
+              {authApiStatus === 'loading' && <span className="text-blue-500">Testing connection...</span>}
+              {authApiStatus === 'success' && <span className="text-green-500">Connected successfully</span>}
+              {authApiStatus === 'error' && <span className="text-red-500">Connection failed</span>}
+            </div>
+            {authErrorMessage && (
+              <div className="text-red-500 text-sm mt-1">
+                <p>Error: {authErrorMessage}</p>
+              </div>
+            )}
+            {authApiStatus === 'not-tested' && (
+              <p className="text-sm text-gray-600">Please log in to test authenticated endpoints</p>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      <div className="mt-4 pt-4 border-t">
+        <div className="text-xs text-gray-500">
+          API URL: {import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
