@@ -43,10 +43,21 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       // Allow bakers to read all orders
       allow read: if isBaker();
-      // Allow bakers to update specific fields in orders (e.g., status)
-      // This rule needs to be more specific about which fields can be updated by a baker
-      // For now, allowing update if baker, but this should be refined.
-      allow update: if isBaker();
+      // Allow bakers to claim unclaimed orders
+      allow update: if isBaker() && 
+                     resource.data.status == 'pending' && 
+                     resource.data.bakerId == null && 
+                     request.resource.data.bakerId == request.auth.uid &&
+                     request.resource.data.status == 'claimed';
+      // Allow bakers to update orders they've claimed
+      allow update: if isBaker() && 
+                     resource.data.bakerId == request.auth.uid;
+      // Allow bakers to add notes to orders they've claimed
+      allow update: if isBaker() && 
+                     resource.data.bakerId == request.auth.uid &&
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notes', 'updatedAt']);
+      // Allow admins to update any order
+      allow update: if isAdmin();
     }
 
     // Cakes collection

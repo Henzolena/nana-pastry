@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getBakerOrderHistory, Order } from '@/services/firestore';
+import { Order } from '@/services/order';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { showErrorToast } from '@/utils/toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Timestamp } from 'firebase/firestore';
 import { Eye } from 'lucide-react';
+import { apiGet } from '@/services/apiService';
+import { formatDate } from '@/utils/formatters';
 
 const OrderHistory: React.FC = () => {
   const { user: bakerUser } = useAuth();
@@ -17,7 +18,7 @@ const OrderHistory: React.FC = () => {
       const fetchOrderHistory = async () => {
         try {
           setLoading(true);
-          const historyOrders = await getBakerOrderHistory(bakerUser.uid);
+          const historyOrders = await apiGet<Order[]>('/orders/baker/history');
           setOrders(historyOrders);
         } catch (error) {
           console.error("Error fetching order history:", error);
@@ -62,11 +63,11 @@ const OrderHistory: React.FC = () => {
                 Customer: <strong className="text-deepbrown">{order.customerInfo.name}</strong>
               </p>
               <p className="text-sm text-warmgray-600 font-body">
-                Placed: {order.createdAt instanceof Timestamp ? order.createdAt.toDate().toLocaleString() : (order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A')}
+                Placed: {formatDate(order.createdAt, { type: 'dateTime', fallback: 'Date unavailable' })}
               </p>
               {order.updatedAt && (
                  <p className="text-xs text-warmgray-500 font-body">
-                   Last Updated: {order.updatedAt instanceof Timestamp ? order.updatedAt.toDate().toLocaleString() : new Date(order.updatedAt).toLocaleString()}
+                   Last Updated: {formatDate(order.updatedAt, { type: 'dateTime', fallback: 'Date unavailable' })}
                  </p>
               )}
               <div className="mt-3">

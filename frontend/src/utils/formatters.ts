@@ -73,6 +73,21 @@ export const parseDate = (value: any): Date | null => {
       const date = new Date(milliseconds + (value.nanoseconds ? value.nanoseconds / 1000000 : 0));
       return isNaN(date.getTime()) ? null : date;
     }
+    
+    // Case 6: Handle potential serialized Firestore timestamps or other timestamp objects
+    if (value && typeof value === 'object') {
+      // Try to convert from various serialized formats
+      if ('_seconds' in value && '_nanoseconds' in value) {
+        const milliseconds = value._seconds * 1000;
+        const date = new Date(milliseconds + (value._nanoseconds / 1000000));
+        return isNaN(date.getTime()) ? null : date;
+      }
+      
+      // If it has a timestamp property, try to use that
+      if ('timestamp' in value) {
+        return parseDate(value.timestamp);
+      }
+    }
   } catch (error) {
     console.error('Error parsing date:', error, value);
   }
@@ -154,7 +169,11 @@ export const formatDate = (
   try {
     const dateObject = parseDate(value);
     
-    if (!dateObject) {
+    if (!dateObject || isNaN(dateObject.getTime())) {
+      console.warn(`Invalid date value or failed to parse: ${JSON.stringify(value)}`);
+      if (throwError) {
+        throw new RangeError('Invalid time value');
+      }
       return fallback;
     }
     
@@ -239,4 +258,4 @@ export const calculateMinDate = (
   }
 
   return minDate;
-}; 
+};

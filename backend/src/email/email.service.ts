@@ -452,4 +452,128 @@ export class EmailService {
       throw new Error(`Invalid email configuration: ${error.message}`);
     }
   }
+
+  /**
+   * Send order claimed notification email to customer
+   * @param data Contains recipient email, order ID, and customer name
+   */
+  async sendOrderClaimedNotification(data: {
+    to: string;
+    orderId: string;
+    customerName: string;
+  }): Promise<void> {
+    try {
+      if (!this.transporter) {
+        console.log('Transporter not initialized, setting up now...');
+        await this.setupTransporter();
+      }
+
+      // Get email configuration
+      const fromEmail = this.configService.get('EMAIL_FROM') || '"Nana\'s Pastry" <orders@nanapastry.com>';
+      const replyTo = this.configService.get('EMAIL_REPLY_TO') || 'orders@nanapastry.com';
+
+      // Send mail with defined transport object
+      const info = await this.transporter.sendMail({
+        from: fromEmail,
+        to: data.to,
+        replyTo: replyTo,
+        subject: `Your Order #${data.orderId.substring(0, 8)} Has Been Claimed - Nana's Pastry`,
+        text: `Dear ${data.customerName},\n\nGreat news! Your order #${data.orderId.substring(0, 8)} has been claimed by one of our bakers and is now being prepared. You can check the status of your order anytime by logging into your account.\n\nThank you for choosing Nana's Pastry!\n\nBest regards,\nThe Nana's Pastry Team`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #e91e63;">Order Update from Nana's Pastry</h2>
+            <p>Dear ${data.customerName},</p>
+            <p>Great news! Your order <strong>#${data.orderId.substring(0, 8)}</strong> has been claimed by one of our bakers and is now being prepared.</p>
+            <p>You can check the status of your order anytime by logging into your account.</p>
+            <p>Thank you for choosing Nana's Pastry!</p>
+            <p>Best regards,<br>The Nana's Pastry Team</p>
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888;">
+              <p>© ${new Date().getFullYear()} Nana's Pastry. All rights reserved.</p>
+            </div>
+          </div>
+        `,
+      });
+
+      // Log email send result and preview URL for development
+      if (this.isDevelopment) {
+        console.log('Email sent: %s', info.messageId);
+        console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+      }
+    } catch (error) {
+      console.error('Failed to send order claimed notification email:', error);
+      throw new Error(`Email sending failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Send order status update notification email to customer
+   * @param data Contains recipient email, order ID, customer name, and status information
+   */
+  async sendOrderStatusUpdateNotification(data: {
+    to: string;
+    orderId: string;
+    customerName: string;
+    status: string;
+    note?: string;
+  }): Promise<void> {
+    try {
+      if (!this.transporter) {
+        console.log('Transporter not initialized, setting up now...');
+        await this.setupTransporter();
+      }
+
+      // Format the status for display (capitalize first letter)
+      const formattedStatus = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+
+      // Customize message based on status
+      let statusMessage = `Your order is now marked as "${formattedStatus}".`;
+      if (data.status === 'processing') {
+        statusMessage = 'Your order is now being prepared by our baker.';
+      } else if (data.status === 'ready') {
+        statusMessage = 'Your order is now ready for pickup/delivery!';
+      } else if (data.status === 'delivered' || data.status === 'picked-up') {
+        statusMessage = `Your order has been ${data.status === 'delivered' ? 'delivered' : 'picked up'}. Enjoy your delicious treats!`;
+      } else if (data.status === 'completed') {
+        statusMessage = 'Your order has been completed. Thank you for your business!';
+      } else if (data.status === 'cancelled') {
+        statusMessage = 'Your order has been cancelled. If you have any questions, please contact our customer service.';
+      }
+
+      // Get email configuration
+      const fromEmail = this.configService.get('EMAIL_FROM') || '"Nana\'s Pastry" <orders@nanapastry.com>';
+      const replyTo = this.configService.get('EMAIL_REPLY_TO') || 'orders@nanapastry.com';
+
+      // Send mail with defined transport object
+      const info = await this.transporter.sendMail({
+        from: fromEmail,
+        to: data.to,
+        replyTo: replyTo,
+        subject: `Order Status Update: #${data.orderId.substring(0, 8)} - ${formattedStatus} - Nana's Pastry`,
+        text: `Dear ${data.customerName},\n\n${statusMessage}\n\n${data.note ? `Note from the baker: ${data.note}\n\n` : ''}You can check the status of your order anytime by logging into your account.\n\nThank you for choosing Nana's Pastry!\n\nBest regards,\nThe Nana's Pastry Team`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #e91e63;">Order Status Update - Nana's Pastry</h2>
+            <p>Dear ${data.customerName},</p>
+            <p>${statusMessage}</p>
+            ${data.note ? `<p><strong>Note from the baker:</strong> ${data.note}</p>` : ''}
+            <p>You can check the status of your order anytime by logging into your account.</p>
+            <p>Thank you for choosing Nana's Pastry!</p>
+            <p>Best regards,<br>The Nana's Pastry Team</p>
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888;">
+              <p>© ${new Date().getFullYear()} Nana's Pastry. All rights reserved.</p>
+            </div>
+          </div>
+        `,
+      });
+
+      // Log email send result and preview URL for development
+      if (this.isDevelopment) {
+        console.log('Status update email sent: %s', info.messageId);
+        console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+      }
+    } catch (error) {
+      console.error('Failed to send order status update notification email:', error);
+      throw new Error(`Email sending failed: ${error.message}`);
+    }
+  }
 }

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Order, updateOrderStatus, OrderStatus } from '@/services/order';
+import { Order, updateOrderStatus, OrderStatus, addOrderNote } from '@/services/order';
 import { processCashAppPayment } from '@/services/payment';
 import { formatCurrency, formatDate } from '@/utils/formatters';
-import { CheckCircle, AlertTriangle, Clock, Edit, Save, X } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Clock, Edit, Save, X, MessageSquare } from 'lucide-react';
 
 // Props for the OrderManagement component
 interface OrderManagementProps {
@@ -20,6 +20,10 @@ const OrderManagement: React.FC<OrderManagementProps> = ({ order, onOrderUpdated
   const [paymentAmount, setPaymentAmount] = useState(order.balanceDue?.toString() || order.total.toString());
   const [confirmationId, setConfirmationId] = useState('');
   const [paymentNote, setPaymentNote] = useState('');
+  
+  // New state for baker notes
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const [newNote, setNewNote] = useState('');
   
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -120,7 +124,7 @@ const OrderManagement: React.FC<OrderManagementProps> = ({ order, onOrderUpdated
       }
       
       // Check if this confirmation ID has already been used
-      const existingPayment = order.payments?.find(p => 
+      const existingPayment = order.payments?.find((p) => 
         p.method === 'cash-app' && 
         p.cashAppDetails?.confirmationId?.toLowerCase() === confirmationId.toLowerCase()
       );
@@ -146,6 +150,30 @@ const OrderManagement: React.FC<OrderManagementProps> = ({ order, onOrderUpdated
       onOrderUpdated();
     } catch (err: any) {
       setError(err.message || 'Failed to process payment');
+    }
+  };
+  
+  // Handle baker note addition
+  const handleAddNote = async () => {
+    setError(null);
+    setSuccess(null);
+    
+    if (!newNote.trim()) {
+      setError('Note cannot be empty');
+      return;
+    }
+    
+    try {
+      await addOrderNote(order.id, newNote);
+      
+      setIsAddingNote(false);
+      setNewNote('');
+      setSuccess('Note added successfully');
+      
+      // Notify parent component that the order was updated
+      onOrderUpdated();
+    } catch (err: any) {
+      setError(err.message || 'Failed to add note');
     }
   };
   
@@ -182,9 +210,14 @@ const OrderManagement: React.FC<OrderManagementProps> = ({ order, onOrderUpdated
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-1">Order Date</h3>
             <p>
-              {/* Handle potentially undefined createdAt and parse string to Date */}
+              {/* Handle potentially undefined createdAt and handle Timestamp objects */}
               {order.createdAt
-                ? formatDate(new Date(order.createdAt), { type: 'dateTime' })
+                ? formatDate(
+                    typeof order.createdAt === 'object' && 'toDate' in order.createdAt 
+                      ? order.createdAt.toDate() 
+                      : new Date(order.createdAt), 
+                    { type: 'dateTime' }
+                  )
                 : 'N/A'}
             </p>
           </div>
@@ -424,8 +457,7 @@ const OrderManagement: React.FC<OrderManagementProps> = ({ order, onOrderUpdated
                   {order.payments.map((payment, index) => (
                     <tr key={payment.id || index}>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                        {/* Parse string date to Date object for formatting */}
-                        {formatDate(new Date(payment.date), { type: 'dateTime' })}
+                        {formatDate(payment.date, { type: 'dateTime', fallback: 'Date unavailable' })}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                         {formatCurrency(payment.amount)}
@@ -455,6 +487,79 @@ const OrderManagement: React.FC<OrderManagementProps> = ({ order, onOrderUpdated
             </div>
           </div>
         )}
+        
+        {/* Baker Notes Section */}
+        <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium">Baker Notes</h3>
+            
+            {!isAddingNote ? (
+              <button
+                onClick={() => setIsAddingNote(true)}
+                className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <MessageSquare className="h-4 w-4 mr-1" />
+                Add Note
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsAddingNote(false)}
+                className="inline-flex items-center px-3 py-1 border border-red-300 text-sm font-medium rounded-md shadow-sm text-red-700 bg-white hover:bg-red-50"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Cancel
+              </button>
+            )}
+          </div>
+          
+          {!isAddingNote ? (
+            <div className="space-y-2">
+              {order.notes && order.notes.length > 0 ? (
+                order.notes.map((note) => (
+                  <div key={note.id} className="p-3 bg-gray-50 rounded-md border border-gray-200">
+                    <div className="flex justify-between items-start">
+                      <p className="text-sm text-gray-900">{note.content}</p>
+                      <div className="text-xs text-gray-500">
+                        {formatDate(note.timestamp, { type: 'dateTime', fallback: 'Date unavailable' })}
+                      </div>
+                    </div>
+                    <div className="mt-1 text-xs text-gray-500">
+                      Added by: {note.bakerName}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No notes added for this order yet.</p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="newNote" className="block text-sm font-medium text-gray-700 mb-1">
+                  New Baker Note
+                </label>
+                <textarea
+                  id="newNote"
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Add a note for this order"
+                  rows={3}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-hotpink focus:ring-hotpink sm:text-sm"
+                />
+              </div>
+              
+              <div className="flex justify-end">
+                <button
+                  onClick={handleAddNote}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-hotpink hover:bg-hotpink/90"
+                >
+                  <Save className="h-4 w-4 mr-1" />
+                  Save Note
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

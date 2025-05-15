@@ -1,11 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronUp, Clock, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { getOrder, Order } from '@/services/order';
 import OrderManagement from '@/components/baker/OrderManagement';
 import OrderStatusTracker from '@/components/orders/OrderStatusTracker';
 import { formatCurrency, formatDate } from '@/utils/formatters';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { showSuccessToast } from '@/utils/toast';
+
+// Helper function to ensure date fields are properly formatted
+const sanitizeOrderDates = (order: Order): Order => {
+  // Create a deep copy to avoid mutation
+  const sanitizedOrder = { ...order };
+  
+  // Set default dates for null/undefined values using ISO string format
+  if (!sanitizedOrder.createdAt) {
+    sanitizedOrder.createdAt = new Date().toISOString(); // Fallback to epoch date
+  }
+  
+  // Handle delivery info date fields
+  if (sanitizedOrder.deliveryInfo) {
+    const deliveryInfo = { ...sanitizedOrder.deliveryInfo };
+    
+    // If deliveryDate is null/undefined, set it to a valid future date
+    if (!deliveryInfo.deliveryDate) {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7); // Default to 7 days from now
+      deliveryInfo.deliveryDate = futureDate.toISOString();
+    }
+    
+    sanitizedOrder.deliveryInfo = deliveryInfo;
+  }
+  
+  // Handle pickup info date fields
+  if (sanitizedOrder.pickupInfo) {
+    const pickupInfo = { ...sanitizedOrder.pickupInfo };
+    
+    // If pickupDate is null/undefined, set it to a valid future date
+    if (!pickupInfo.pickupDate) {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 3); // Default to 3 days from now
+      pickupInfo.pickupDate = futureDate.toISOString();
+    }
+    
+    sanitizedOrder.pickupInfo = pickupInfo;
+  }
+  
+  return sanitizedOrder;
+};
 
 const BakerOrderManagement: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -16,6 +57,42 @@ const BakerOrderManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showItems, setShowItems] = useState(true);
   
+  // Polling related state
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const POLLING_INTERVAL = 30000; // 30 seconds
+  
+  // Clean up polling on component unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, []);
+  
+  // Start polling for order updates
+  const startPolling = useCallback(() => {
+    // Clear any existing interval
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+    
+    // Set up new interval
+    pollingIntervalRef.current = setInterval(() => {
+      if (orderId) {
+        // Use a quiet refresh without loading indicators
+        getOrder(orderId)
+          .then(freshOrder => {
+            setOrder(sanitizeOrderDates(freshOrder));
+          })
+          .catch(err => {
+            console.error('Background refresh error:', err);
+            // Don't show user-facing errors for background refreshes
+          });
+      }
+    }, POLLING_INTERVAL);
+  }, [orderId]);
+  
   // Fetch order details
   const fetchOrderDetails = async () => {
     if (!orderId) return;
@@ -23,8 +100,16 @@ const BakerOrderManagement: React.FC = () => {
     try {
       setLoading(true);
       const orderData = await getOrder(orderId);
-      setOrder(orderData);
+      
+      // Sanitize the order data to handle null dates
+      const sanitizedOrder = sanitizeOrderDates(orderData);
+      setOrder(sanitizedOrder);
       setError(null);
+      
+      // Set a polling interval to check for updates if this is an active order
+      if (sanitizedOrder.status !== 'completed' && sanitizedOrder.status !== 'cancelled') {
+        startPolling();
+      }
     } catch (err: any) {
       console.error('Error fetching order details:', err);
       setError(err.message || 'Failed to load order details');
@@ -115,7 +200,7 @@ const BakerOrderManagement: React.FC = () => {
         Order Management
       </h1>
       <p className="text-gray-500 mb-6">
-        Order #{order.id.slice(0, 8).toUpperCase()} - Placed on {formatDate(order.createdAt)}
+        Order #{order.id.slice(0, 8).toUpperCase()} - Placed on {order.createdAt ? formatDate(order.createdAt) : 'N/A'}
       </p>
       
       {/* Order Management Controls */}

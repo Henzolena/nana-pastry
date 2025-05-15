@@ -1,5 +1,6 @@
 export type OrderStatus =
   | 'pending'
+  | 'claimed'    // Added for baker claiming the order
   | 'approved'
   | 'processing'
   | 'ready'

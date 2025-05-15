@@ -3,6 +3,7 @@ import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto, CancelOrderDto } from './dto/update-order-status.dto'; // Assuming CancelOrderDto will be added to this file or a new one
 import { RecordPaymentDto } from './dto/record-payment.dto';
+import { AddOrderNoteDto } from './dto/add-order-note.dto';
 import { FirebaseAuthGuard } from '../auth/guards/firebase-auth.guard';
 import { OrderStatus } from '../types/order.types'; // Assuming OrderStatus enum/type is defined here
 
@@ -20,6 +21,15 @@ export class OrdersController {
   @Get('my-orders') // Changed from /my-history
   async getMyOrderHistory(@Request() req): Promise<any[]> {
       return this.ordersService.getUserOrderHistory(req.user.uid, { uid: req.user.uid, role: req.user.role });
+  }
+  
+  // Endpoint to get all unclaimed orders (Baker only)
+  @Get('unclaimed')
+  async getUnclaimedOrders(@Request() req): Promise<any[]> {
+    if (req.user.role !== 'baker' && req.user.role !== 'admin') {
+      throw new UnauthorizedException('Only bakers can view unclaimed orders.');
+    }
+    return this.ordersService.getUnclaimedOrders({ uid: req.user.uid, role: req.user.role });
   }
 
   @Get(':orderId')
@@ -77,5 +87,46 @@ export class OrdersController {
      }
     // Assuming ordersService.getAllOrdersForAdmin is updated to handle optional status filter
     return this.ordersService.getAllOrdersForAdmin(status, { uid: req.user.uid, role: req.user.role });
+  }
+
+  // Endpoint for a baker to claim an order
+  @Put(':orderId/claim')
+  async claimOrder(@Param('orderId') orderId: string, @Request() req): Promise<any> {
+    if (req.user.role !== 'baker') {
+      throw new UnauthorizedException('Only bakers can claim orders.');
+    }
+    return this.ordersService.claimOrder(orderId, { uid: req.user.uid, role: req.user.role });
+  }
+
+  // Endpoint to get baker's active orders
+  @Get('baker/active')
+  async getBakerActiveOrders(@Request() req): Promise<any[]> {
+    if (req.user.role !== 'baker' && req.user.role !== 'admin') {
+      throw new UnauthorizedException('Only bakers can view active orders.');
+    }
+    return this.ordersService.getBakerActiveOrders(req.user.uid, { uid: req.user.uid, role: req.user.role });
+  }
+
+  // Endpoint to get baker's order history
+  @Get('baker/history')
+  async getBakerOrderHistory(@Request() req): Promise<any[]> {
+    if (req.user.role !== 'baker' && req.user.role !== 'admin') {
+      throw new UnauthorizedException('Only bakers can view order history.');
+    }
+    return this.ordersService.getBakerOrderHistory(req.user.uid, { uid: req.user.uid, role: req.user.role });
+  }
+
+  // Endpoint to add a note to an order
+  @Post(':orderId/notes')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async addOrderNote(
+    @Param('orderId') orderId: string,
+    @Body() addOrderNoteDto: AddOrderNoteDto,
+    @Request() req
+  ): Promise<void> {
+    if (req.user.role !== 'baker' && req.user.role !== 'admin') {
+      throw new UnauthorizedException('Only bakers and admins can add notes to orders.');
+    }
+    return this.ordersService.addOrderNote(orderId, addOrderNoteDto.content, { uid: req.user.uid, role: req.user.role });
   }
 }

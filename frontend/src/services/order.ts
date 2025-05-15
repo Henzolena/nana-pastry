@@ -2,15 +2,11 @@ import { apiPost, apiGet, apiPut } from './apiService'; // Import API service
 import type { CartItem } from '../types/cart';
 import { FirestoreDocument } from '@/lib/firestore';
 import { Timestamp } from 'firebase/firestore';
-// Remove direct Firestore imports
-// import { getDocumentById, addDocument, updateDocument, getDocuments, FirestoreDocument } from '../lib/firestore';
-// import { where, Timestamp, orderBy } from 'firebase/firestore';
-// Remove userService import as profile update is backend responsibility
-// import { updateOrderStats } from './userService';
 
 // Order status types
 export type OrderStatus =
   | 'pending'    // Initial status when order is placed
+  | 'claimed'    // Order claimed by baker
   | 'approved'   // Order has been approved by the baker
   | 'processing' // Baker is working on the order
   | 'ready'      // Order is ready for pickup/delivery
@@ -63,6 +59,15 @@ export interface PaymentTransaction {
   notes?: string;
 }
 
+// Baker note for an order
+export interface OrderNote {
+  id: string;
+  content: string;
+  timestamp: string;
+  bakerName: string;
+  bakerId: string;
+}
+
 // Status history record
 export interface StatusHistoryEntry {
   status: OrderStatus;
@@ -82,6 +87,7 @@ export interface PaymentStatusHistoryEntry {
 // Define the basic Order data without Firestore-specific fields
 export interface OrderData {
   userId?: string;
+  bakerId?: string; // Baker assigned to the order
   items: OrderItem[];
   subtotal: number;
   tax: number;
@@ -118,26 +124,23 @@ export interface OrderData {
     referenceImages?: string[];
     depositAmount?: number;
   };
-  // Status tracking
-  statusHistory?: StatusHistoryEntry[];
-  // Payment tracking
-  paymentStatusHistory?: PaymentStatusHistoryEntry[];
-  // Payment transactions
-  payments?: PaymentTransaction[];
-  // Balance tracking
-  balanceDue?: number;
-  amountPaid?: number;
-  // Add a field to track if the order has been linked to a user profile
-  profileUpdated?: boolean; // This might be backend internal now
-  // Idempotency key for preventing duplicate orders
-  idempotencyKey?: string;
-  createdAt?: string; // Use string for DTO from backend
-  updatedAt?: string; // Use string for DTO from backend
+  notes?: OrderNote[]; // Baker notes for the order
 }
 
 // Full Order type received from backend (includes ID)
 export type Order = OrderData & FirestoreDocument & {
-  createdAt: Date | string | Timestamp; // Ensure createdAt is properly typed
+  createdAt: Date | string | Timestamp | any; // Ensure createdAt is properly typed
+  updatedAt?: Date | string | Timestamp;
+  statusHistory?: StatusHistoryEntry[];
+  paymentStatusHistory?: PaymentStatusHistoryEntry[];
+  payments?: PaymentTransaction[];
+  amountPaid?: number;
+  balanceDue?: number;
+};
+
+// Type for createNewOrder function to avoid issues with additional fields
+export type CreateOrderPayload = Omit<OrderData, 'status' | 'paymentStatus'> & { 
+  idempotencyKey?: string 
 };
 
 /**
@@ -145,29 +148,10 @@ export type Order = OrderData & FirestoreDocument & {
  * @param orderData Order data to send to the backend
  * @returns Promise with order ID
  */
-export const createNewOrder = async (orderData: Omit<OrderData, 'status' | 'paymentStatus' | 'amountPaid' | 'balanceDue' | 'statusHistory' | 'paymentStatusHistory' | 'payments' | 'profileUpdated' | 'createdAt' | 'updatedAt'> & { idempotencyKey?: string }): Promise<string> => {
+export const createNewOrder = async (orderData: CreateOrderPayload): Promise<string> => {
   try {
-    // Explicitly construct the payload to send, ensuring only allowed fields are included.
-    // Backend's CreateOrderDto defines what's allowed.
-    // userId, status, paymentStatus are set by the backend.
-    const { 
-      userId, // remove
-      status, // remove
-      paymentStatus, // remove
-      amountPaid, // remove (calculated by backend)
-      balanceDue, // remove (calculated by backend)
-      statusHistory, // remove (managed by backend)
-      paymentStatusHistory, // remove (managed by backend)
-      payments, // remove (managed by backend)
-      profileUpdated, // remove (internal backend logic)
-      createdAt, // remove (set by backend)
-      updatedAt, // remove (set by backend)
-      ...payload // keep the rest
-    } = orderData as OrderData; // Cast to full OrderData to access all keys for destructuring
-
-    console.log("Payload for createNewOrder:", payload);
-
-    const response = await apiPost<{ id: string }>('/orders', payload);
+    console.log("Payload for createNewOrder:", orderData);
+    const response = await apiPost<{ id: string }>('/orders', orderData);
     return response.id;
   } catch (error) {
     console.error('Error creating order via API:', error);
@@ -222,7 +206,18 @@ export const updateOrderStatus = async (
 ): Promise<void> => {
   try {
     // The backend handles authorization, history, and updatedBy
-    await apiPut<void>(`/orders/${orderId}/status`, { status, note });
+    try {
+      await apiPut<void>(`/orders/${orderId}/status`, { status, note });
+    } catch (apiError) {
+      // Check if this is a JSON parsing error with status 200
+      if (apiError instanceof SyntaxError && apiError.message.includes('JSON')) {
+        // The server responded with success but no valid JSON - this is okay for void responses
+        console.log('Server responded with success but empty body (expected for void response)');
+        return; // Success with empty response
+      }
+      // Rethrow other errors
+      throw apiError;
+    }
   } catch (error) {
     console.error('Error updating order status via API:', error);
     throw error;
@@ -348,6 +343,24 @@ export const processCashAppPayment = async (
     return response.paymentId;
   } catch (error) {
     console.error('Error processing Cash App payment via API:', error);
+    throw error;
+  }
+};
+
+/**
+ * Add a note to an order
+ * @param orderId Order ID
+ * @param content Note content
+ * @returns Promise indicating success
+ */
+export const addOrderNote = async (
+  orderId: string,
+  content: string
+): Promise<void> => {
+  try {
+    await apiPost<void>(`/orders/${orderId}/notes`, { content });
+  } catch (error) {
+    console.error('Error adding note to order via API:', error);
     throw error;
   }
 };

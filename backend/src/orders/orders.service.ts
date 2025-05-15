@@ -13,6 +13,7 @@ const COLLECTION_NAME = 'orders';
 // Order status types (copy from frontend type)
 export type OrderStatus =
   | 'pending'
+  | 'claimed'    // Added for baker claiming
   | 'approved'
   | 'processing'
   | 'ready'
@@ -84,6 +85,7 @@ export interface PaymentStatusHistoryEntry {
 // Define the basic Order data without Firestore-specific fields
 export interface OrderData {
   userId?: string;
+  bakerId?: string; // Baker assigned to the order
   items: OrderItem[];
   subtotal: number;
   tax: number;
@@ -361,6 +363,27 @@ export class OrdersService {
       });
 
       console.log(`Order ${orderId} status updated to ${updateStatusDto.status}.`);
+
+      // Send email notification to customer
+      try {
+        // Only send notification for certain status changes that customers would care about
+        const statusesToNotify = ['approved', 'processing', 'ready', 'delivered', 'picked-up', 'completed', 'cancelled'];
+        
+        if (statusesToNotify.includes(updateStatusDto.status)) {
+          await this.emailService.sendOrderStatusUpdateNotification({
+            to: orderData.customerInfo.email,
+            orderId: orderId,
+            customerName: orderData.customerInfo.name,
+            status: updateStatusDto.status,
+            note: updateStatusDto.note,
+          });
+          
+          this.logger.log(`Status update notification sent to ${orderData.customerInfo.email} for order ${orderId}.`);
+        }
+      } catch (emailError) {
+        // Log but don't fail the request if email sending fails
+        this.logger.error(`Failed to send status update email for order ${orderId}:`, emailError);
+      }
 
     } catch (error) {
       console.error('Error updating order status:', error);
@@ -763,5 +786,256 @@ export class OrdersService {
       orders.push({ id: doc.id, ...doc.data() } as Order);
     });
     return orders;
+  }
+
+  /**
+   * Get all unclaimed orders that bakers can work on
+   * @param requestingUser The authenticated user requesting the orders
+   * @returns Promise with array of unclaimed orders
+   */
+  async getUnclaimedOrders(requestingUser: { uid: string, role?: string }): Promise<Order[]> {
+    // Verify the user has baker role
+    if (requestingUser.role !== 'baker' && requestingUser.role !== 'admin') {
+      throw new UnauthorizedException('Only bakers can view unclaimed orders.');
+    }
+
+    try {
+      // Query for orders with 'pending' status and no bakerId
+      // Firestore query for null or non-existent fields can be tricky
+      // First, try to get orders with status 'pending'
+      let query = this.firestore.collection(COLLECTION_NAME)
+        .where('status', '==', 'pending')
+        .orderBy('createdAt', 'asc'); // Oldest first, so urgent orders get priority
+
+      const snapshot = await query.get();
+      const orders: Order[] = [];
+      
+      // Filter out orders that already have a bakerId
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        // Include only if bakerId doesn't exist or is null
+        if (!data.bakerId) {
+          orders.push({ id: doc.id, ...data } as Order);
+        }
+      });
+      
+      return orders;
+    } catch (error) {
+      this.logger.error('Error getting unclaimed orders:', error);
+      throw new BadRequestException('Failed to retrieve unclaimed orders.');
+    }
+  }
+
+  /**
+   * Claim an order for a baker to work on
+   * @param orderId Order ID to claim
+   * @param requestingUser The authenticated baker claiming the order
+   * @returns Promise with claimed order details
+   */
+  async claimOrder(orderId: string, requestingUser: { uid: string, role?: string }): Promise<Order> {
+    // Verify the user has baker role
+    if (requestingUser.role !== 'baker') {
+      throw new UnauthorizedException('Only bakers can claim orders.');
+    }
+
+    try {
+      const orderDocRef = this.firestore.collection(COLLECTION_NAME).doc(orderId);
+      const orderDoc = await orderDocRef.get();
+
+      if (!orderDoc.exists) {
+        throw new NotFoundException(`Order with ID "${orderId}" not found.`);
+      }
+
+      const orderData = orderDoc.data() as OrderData;
+
+      // Check if the order is already claimed by another baker
+      if (orderData.bakerId && orderData.bakerId !== requestingUser.uid) {
+        throw new BadRequestException('This order has already been claimed by another baker.');
+      }
+
+      // Check if the order is in a claimable state
+      if (orderData.status !== 'pending') {
+        throw new BadRequestException(`Cannot claim order with status "${orderData.status}".`);
+      }
+
+      // Update the order with the baker's ID and change status to 'claimed'
+      const statusEntry: StatusHistoryEntry = {
+        status: 'claimed',
+        timestamp: Timestamp.now(),
+        note: 'Order claimed by baker',
+        updatedBy: requestingUser.uid
+      };
+
+      await orderDocRef.update({
+        bakerId: requestingUser.uid,
+        status: 'claimed',
+        statusHistory: admin.firestore.FieldValue.arrayUnion(statusEntry)
+      });
+
+      // Get the updated order
+      const updatedOrderDoc = await orderDocRef.get();
+      
+      // Send email notification to customer that their order has been claimed
+      try {
+        const customerEmail = orderData.customerInfo.email;
+        if (customerEmail) {
+          await this.emailService.sendOrderClaimedNotification({
+            to: customerEmail,
+            orderId: orderId,
+            customerName: orderData.customerInfo.name
+          });
+          this.logger.log(`Order claimed notification sent to customer for order ${orderId}`);
+        }
+      } catch (emailError) {
+        // Log but don't fail the claim operation if email fails
+        this.logger.error(`Failed to send order claimed notification for order ${orderId}:`, emailError);
+      }
+
+      return { id: updatedOrderDoc.id, ...updatedOrderDoc.data() } as Order;
+    } catch (error) {
+      if (error instanceof NotFoundException || 
+          error instanceof UnauthorizedException || 
+          error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.error('Error claiming order:', error);
+      throw new BadRequestException('Failed to claim order.');
+    }
+  }
+
+  /**
+   * Get active orders for a specific baker
+   * @param bakerId The baker's user ID
+   * @param requestingUser The authenticated user requesting the orders
+   * @returns Promise with array of orders
+   */
+  async getBakerActiveOrders(bakerId: string, requestingUser: { uid: string, role?: string }): Promise<Order[]> {
+    // Verify the user has correct permissions
+    if (requestingUser.uid !== bakerId && requestingUser.role !== 'admin') {
+      throw new UnauthorizedException('You can only view your own active orders.');
+    }
+
+    try {
+      // Query for orders with 'claimed' status and assigned to this baker
+      let query = this.firestore.collection(COLLECTION_NAME)
+        .where('bakerId', '==', bakerId)
+        .where('status', 'not-in', ['completed', 'delivered', 'cancelled'])  // Exclude completed orders
+        .orderBy('createdAt', 'desc');  // Most recent first
+
+      const snapshot = await query.get();
+      const orders: Order[] = [];
+      
+      snapshot.forEach(doc => {
+        orders.push({ id: doc.id, ...doc.data() } as Order);
+      });
+      
+      return orders;
+    } catch (error) {
+      this.logger.error(`Error getting active orders for baker ${bakerId}:`, error);
+      throw new BadRequestException('Failed to retrieve active orders.');
+    }
+  }
+
+  /**
+   * Get order history (completed orders) for a specific baker
+   * @param bakerId The baker's user ID
+   * @param requestingUser The authenticated user requesting the orders
+   * @returns Promise with array of orders
+   */
+  async getBakerOrderHistory(bakerId: string, requestingUser: { uid: string, role?: string }): Promise<Order[]> {
+    // Verify the user has correct permissions
+    if (requestingUser.uid !== bakerId && requestingUser.role !== 'admin') {
+      throw new UnauthorizedException('You can only view your own order history.');
+    }
+
+    try {
+      // Query for orders with completed/delivered/cancelled status and assigned to this baker
+      let query = this.firestore.collection(COLLECTION_NAME)
+        .where('bakerId', '==', bakerId)
+        .where('status', 'in', ['completed', 'delivered', 'cancelled'])  // Only include completed orders
+        .orderBy('createdAt', 'desc');  // Most recent first
+
+      const snapshot = await query.get();
+      const orders: Order[] = [];
+      
+      snapshot.forEach(doc => {
+        orders.push({ id: doc.id, ...doc.data() } as Order);
+      });
+      
+      return orders;
+    } catch (error) {
+      this.logger.error(`Error getting order history for baker ${bakerId}:`, error);
+      throw new BadRequestException('Failed to retrieve order history.');
+    }
+  }
+
+  /**
+   * Add a note to an order
+   * @param orderId The order ID
+   * @param content The note content
+   * @param requestingUser The user adding the note
+   * @returns Promise<void>
+   */
+  async addOrderNote(
+    orderId: string,
+    content: string,
+    requestingUser: { uid: string; role?: string }
+  ): Promise<void> {
+    try {
+      // Check if the order exists
+      const orderDocRef = this.firestore.collection(COLLECTION_NAME).doc(orderId);
+      const orderDoc = await orderDocRef.get();
+
+      if (!orderDoc.exists) {
+        throw new NotFoundException(`Order with ID ${orderId} not found`);
+      }
+
+      const orderData = orderDoc.data() as Order;
+
+      // Only allow baker who claimed the order or admin to add notes
+      if (
+        requestingUser.role !== 'admin' &&
+        (requestingUser.role !== 'baker' || 
+        (orderData.bakerId && orderData.bakerId !== requestingUser.uid))
+      ) {
+        throw new UnauthorizedException('You can only add notes to orders assigned to you');
+      }
+
+      // Get baker's name from users collection
+      const bakerUserRef = this.firestore.collection('users').doc(requestingUser.uid);
+      const bakerUserDoc = await bakerUserRef.get();
+      
+      if (!bakerUserDoc.exists) {
+        throw new NotFoundException(`Baker with ID ${requestingUser.uid} not found`);
+      }
+      
+      const bakerData = bakerUserDoc.data() || {};
+      const bakerName = bakerData.displayName || bakerData.email || 'Unknown Baker';
+
+      // Create the note object
+      const noteId = this.firestore.collection('_').doc().id; // Generate a unique ID
+      const note = {
+        id: noteId,
+        content: content,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        bakerId: requestingUser.uid,
+        bakerName: bakerName
+      };
+
+      // Add note to the order
+      await orderDocRef.update({
+        notes: admin.firestore.FieldValue.arrayUnion(note),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+    } catch (error) {
+      if (error instanceof NotFoundException || 
+          error instanceof UnauthorizedException || 
+          error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.error(`Error adding note to order ${orderId}:`, error);
+      throw new BadRequestException('Failed to add note to order');
+    }
   }
 }

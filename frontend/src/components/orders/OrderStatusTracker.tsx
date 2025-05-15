@@ -164,10 +164,16 @@ const CurrentStatus: React.FC<{ order: Order }> = ({ order }) => {
 const StatusTimeline: React.FC<{ entries: StatusHistoryEntry[] }> = ({ entries }) => {
   // Sort entries by timestamp (newest first)
   const sortedEntries = [...entries].sort((a, b) => {
-    // Parse string timestamps into Date objects for comparison
-    const dateA = new Date(a.timestamp);
-    const dateB = new Date(b.timestamp);
-    return dateB.getTime() - dateA.getTime();
+    try {
+      // Use the parseDate utility to handle different timestamp formats
+      const dateA = formatDate(a.timestamp, { type: 'iso' });
+      const dateB = formatDate(b.timestamp, { type: 'iso' });
+      // Compare as ISO strings for better results
+      return dateB.localeCompare(dateA);
+    } catch (error) {
+      console.error('Error sorting timestamps:', error);
+      return 0; // Return 0 if comparison fails
+    }
   });
 
   return (
@@ -175,31 +181,26 @@ const StatusTimeline: React.FC<{ entries: StatusHistoryEntry[] }> = ({ entries }
       <h3 className="lg font-medium mb-4">Status History</h3>
 
       <div className="space-y-4">
-        {sortedEntries.map((entry, index) => {
-          // Parse string timestamp to Date object for formatting
-          const timestamp = new Date(entry.timestamp);
-
-          return (
-            <div key={index} className="flex">
-              <div className="mr-4 flex-none">
-                {getStatusIcon(entry.status)}
-              </div>
-              <div className="flex-grow pb-6">
-                <div className="flex items-center">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(entry.status)}`}>
-                    {getStatusDisplayName(entry.status)}
-                  </span>
-                  <span className="ml-2 text-sm text-gray-500">
-                    {formatDate(timestamp, { type: 'dateTime' })}
-                  </span>
-                </div>
-                {entry.note && (
-                  <p className="mt-1 text-sm text-gray-600">{entry.note}</p>
-                )}
-              </div>
+        {sortedEntries.map((entry, index) => (
+          <div key={index} className="flex">
+            <div className="mr-4 flex-none">
+              {getStatusIcon(entry.status)}
             </div>
-          );
-        })}
+            <div className="flex-grow pb-6">
+              <div className="flex items-center">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(entry.status)}`}>
+                  {getStatusDisplayName(entry.status)}
+                </span>
+                <span className="ml-2 text-sm text-gray-500">
+                  {formatDate(entry.timestamp, { type: 'dateTime', fallback: 'Date unavailable' })}
+                </span>
+              </div>
+              {entry.note && (
+                <p className="mt-1 text-sm text-gray-600">{entry.note}</p>
+              )}
+            </div>
+          </div>
+        ))}
 
         {sortedEntries.length === 0 && (
           <p className="text-sm text-gray-500">No status updates yet.</p>
@@ -213,10 +214,16 @@ const StatusTimeline: React.FC<{ entries: StatusHistoryEntry[] }> = ({ entries }
 const PaymentHistory: React.FC<{ payments: PaymentTransaction[] }> = ({ payments }) => {
   // Sort payments by date (newest first)
   const sortedPayments = [...payments].sort((a, b) => {
-    // Parse string dates into Date objects for comparison
-    const dateA = new Date(a.date);
-    const dateB = new Date(b.date);
-    return dateB.getTime() - dateA.getTime();
+    try {
+      // Use parseDate utility to safely handle different date formats
+      const dateAIso = formatDate(a.date, { type: 'iso' });
+      const dateBIso = formatDate(b.date, { type: 'iso' });
+      // Compare as ISO strings for better results
+      return dateBIso.localeCompare(dateAIso);
+    } catch (error) {
+      console.error('Error sorting payment dates:', error);
+      return 0; // Return 0 if comparison fails
+    }
   });
   
   return (
@@ -237,15 +244,13 @@ const PaymentHistory: React.FC<{ payments: PaymentTransaction[] }> = ({ payments
             </thead>
             <tbody className="divide-y divide-gray-200">
               {sortedPayments.map((payment) => {
-                // Parse string date into Date object for formatting
-                const date = new Date(payment.date);
-                
+                // Use consistent date formatting with fallback
                 // Determine if this is a refund (negative amount)
                 const isRefund = payment.amount < 0;
                 
                 return (
                   <tr key={payment.id}>
-                    <td className="px-4 py-3">{formatDate(date, { type: 'date' })}</td>
+                    <td className="px-4 py-3">{formatDate(payment.date, { type: 'date', fallback: 'Date unavailable' })}</td>
                     <td className="px-4 py-3">{getPaymentMethodName(payment.method)}</td>
                     <td className={`px-4 py-3 font-medium ${isRefund ? 'text-red-600' : 'text-gray-900'}`}>
                       {formatCurrency(payment.amount)}

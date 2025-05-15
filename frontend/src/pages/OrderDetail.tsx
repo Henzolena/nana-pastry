@@ -152,7 +152,7 @@ const OrderDetail: React.FC = () => {
             <div className="flex flex-col md:flex-row md:justify-between md:items-center">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Order Details</h1>
-                <p className="text-gray-500">Placed on {formatDate(order.createdAt)}</p>
+                <p className="text-gray-500">Placed on {formatDate(order.createdAt, { type: 'dateTime', fallback: 'Date unavailable' })}</p>
               </div>
               <div className="mt-4 md:mt-0">
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${

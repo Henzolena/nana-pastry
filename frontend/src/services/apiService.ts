@@ -107,8 +107,22 @@ const apiRequest = async <T>(
         return null as T; // Return null for no content
     }
 
-    // Parse and return JSON response
-    return await response.json() as T;
+    // Check for empty response
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      // Response claims to be JSON, try to parse it
+      try {
+        return await response.json() as T;
+      } catch (parseError) {
+        console.warn(`Received status ${response.status} but empty or invalid JSON body: `, parseError);
+        return null as T; // Return null for empty JSON response
+      }
+    } else {
+      // Not a JSON response, return text or null
+      const text = await response.text();
+      console.log(`Received non-JSON response (${response.status}): `, text.substring(0, 100) + (text.length > 100 ? '...' : ''));
+      return (text ? text : null) as T;
+    }
 
   } catch (error) {
     console.error(`API request error [${method} ${url}]:`, error);

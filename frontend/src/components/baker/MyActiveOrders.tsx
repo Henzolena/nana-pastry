@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getBakerActiveOrders, Order, updateOrder } from '@/services/firestore';
+import { Order, OrderStatus, StatusHistoryEntry } from '@/services/order';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { showErrorToast, showSuccessToast, showInfoToast } from '@/utils/toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Timestamp } from 'firebase/firestore';
 import { Edit } from 'lucide-react';
+import { apiGet, apiPut } from '@/services/apiService';
+import { formatDate } from '@/utils/formatters';
 
 const MyActiveOrders: React.FC = () => {
   const { user: bakerUser } = useAuth();
@@ -16,7 +17,8 @@ const MyActiveOrders: React.FC = () => {
     if (!bakerUser) return;
     try {
       setLoading(true);
-      const activeOrders = await getBakerActiveOrders(bakerUser.uid);
+      // Query for baker active orders - need to add this endpoint in backend
+      const activeOrders = await apiGet<Order[]>('/orders/baker/active');
       setOrders(activeOrders);
     } catch (error) {
       console.error("Error fetching active orders:", error);
@@ -35,18 +37,61 @@ const MyActiveOrders: React.FC = () => {
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
       showInfoToast(`Updating order ${orderId.substring(0,8)} to ${newStatus}...`);
-      await updateOrder(orderId, { status: newStatus });
-      showSuccessToast('Order status updated successfully!');
+      
+      // Add a delay to allow the update to complete
+      const updatePromise = apiPut<void>(`/orders/${orderId}/status`, { 
+        status: newStatus,
+        note: `Status updated to ${newStatus} by baker`
+      });
+      
+      try {
+        await updatePromise;
+        showSuccessToast('Order status updated successfully!');
+      } catch (apiError) {
+        // Check if this is a JSON parsing error with status 200
+        if (apiError instanceof SyntaxError && apiError.message.includes('JSON')) {
+          // The server responded with success but no valid JSON - this is okay for void responses
+          console.log('Server responded with success but empty body (expected for void response)');
+          showSuccessToast('Order status updated successfully!');
+        } else {
+          // This is a real error
+          throw apiError;
+        }
+      }
+      
       // Optimistically update UI or re-fetch
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order.id === orderId ? { ...order, status: newStatus } : order
-        ).filter(order => newStatus !== 'completed' && newStatus !== 'delivered' && newStatus !== 'cancelled') // Remove if moved to non-active
-      );
-      // Or call fetchActiveOrders(); if complex filtering is involved
+      setOrders(prevOrders => {
+        const updatedOrders = prevOrders.map(order => {
+          if (order.id === orderId) {
+            // Create a properly typed status history entry
+            const newHistoryEntry: StatusHistoryEntry = {
+              status: newStatus as OrderStatus,
+              timestamp: new Date().toISOString(),
+              note: `Status updated to ${newStatus} by baker`
+            };
+            
+            return {
+              ...order,
+              status: newStatus as OrderStatus,
+              statusHistory: [
+                ...(order.statusHistory || []),
+                newHistoryEntry
+              ]
+            };
+          }
+          return order;
+        });
+        
+        // Filter out completed/delivered/cancelled orders
+        return updatedOrders.filter(order => 
+          !['completed', 'delivered', 'cancelled'].includes(order.status)
+        );
+      });
     } catch (error) {
       console.error("Error updating order status:", error);
       showErrorToast('Failed to update order status.');
+      // Fetch the orders again to ensure UI is in sync with server
+      fetchActiveOrders();
     }
   };
 
@@ -57,11 +102,13 @@ const MyActiveOrders: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'claimed': return 'bg-blue-100 text-blue-700';
-      case 'in-progress': return 'bg-indigo-100 text-indigo-700';
-      case 'baking': return 'bg-purple-100 text-purple-700';
-      case 'decorating': return 'bg-pink-100 text-pink-700'; // Using a theme color
-      case 'ready for pickup': return 'bg-green-100 text-green-700';
-      case 'out for delivery': return 'bg-teal-100 text-teal-700';
+      case 'approved': return 'bg-indigo-100 text-indigo-700';
+      case 'processing': return 'bg-purple-100 text-purple-700';
+      case 'ready': return 'bg-green-100 text-green-700';
+      case 'delivered': return 'bg-teal-100 text-teal-700';
+      case 'picked-up': return 'bg-teal-100 text-teal-700';
+      case 'completed': return 'bg-green-100 text-green-700';
+      case 'cancelled': return 'bg-red-100 text-red-700';
       default: return 'bg-warmgray-100 text-warmgray-700';
     }
   };
@@ -89,16 +136,27 @@ const MyActiveOrders: React.FC = () => {
                   {order.customerInfo.email}
                 </p>
                 <p className="text-sm text-warmgray-600 font-body">
-                  Placed: {order.createdAt instanceof Timestamp ? order.createdAt.toDate().toLocaleString() : (order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A')}
+                  Placed: {order.createdAt 
+                      ? formatDate(order.createdAt, { 
+                          type: 'dateTime', 
+                          fallback: 'Date unavailable' 
+                        })
+                      : 'N/A'}
                 </p>
                 {order.deliveryMethod === 'delivery' && order.deliveryInfo?.deliveryDate && (
                   <p className="text-sm text-rosepink font-body font-semibold mt-1">
-                    Due: {order.deliveryInfo.deliveryDate instanceof Timestamp ? order.deliveryInfo.deliveryDate.toDate().toLocaleString() : new Date(order.deliveryInfo.deliveryDate).toLocaleString()}
+                    Due: {formatDate(order.deliveryInfo.deliveryDate, { 
+                      type: 'dateTime', 
+                      fallback: 'Date unavailable' 
+                    })}
                   </p>
                 )}
                 {order.deliveryMethod === 'pickup' && order.pickupInfo?.pickupDate && (
                   <p className="text-sm text-rosepink font-body font-semibold mt-1">
-                    Pickup: {order.pickupInfo.pickupDate instanceof Timestamp ? order.pickupInfo.pickupDate.toDate().toLocaleString() : new Date(order.pickupInfo.pickupDate).toLocaleString()}
+                    Pickup: {formatDate(order.pickupInfo.pickupDate, { 
+                      type: 'dateTime', 
+                      fallback: 'Date unavailable' 
+                    })}
                   </p>
                 )}
                 <div className="mt-3">
@@ -126,15 +184,14 @@ const MyActiveOrders: React.FC = () => {
                     onChange={(e) => handleStatusChange(order.id, e.target.value)}
                     className="w-full p-2 border border-warmgray-300 rounded-md focus:ring-hotpink focus:border-hotpink font-body text-sm shadow-sm"
                   >
-                    <option value="claimed">Claimed (To Do)</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="baking">Baking</option>
-                    <option value="decorating">Decorating</option>
-                    <option value="ready for pickup">Ready for Pickup</option>
-                    <option value="out for delivery">Out for Delivery</option>
-                    <option value="completed">Completed</option>
+                    <option value="claimed">Claimed</option>
+                    <option value="approved">Approved</option>
+                    <option value="processing">Processing</option>
+                    <option value="ready">Ready for Pickup/Delivery</option>
                     <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option> {/* Added Cancelled */}
+                    <option value="picked-up">Picked Up</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
                   </select>
                 </div>
                 <Link 
