@@ -23,6 +23,7 @@ lerna-debug.log*
 **/build/
 /build
 coverage/
+/.vite/
 
 # Environment variables - IMPORTANT
 # Ignore all .env files in any directory
