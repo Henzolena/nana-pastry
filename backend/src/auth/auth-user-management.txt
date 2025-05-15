@@ -1,0 +1,51 @@
+  @UseGuards(FirebaseAuthGuard)
+  @Post('disable-user/:userId')
+  async disableUser(@Param('userId') userId: string, @Request() req): Promise<any> {
+    // Only allow admins to disable users
+    if (req.user.role !== 'admin') {
+      throw new HttpException(
+        { message: 'Only administrators can disable user accounts', code: 'auth/permission-denied' },
+        HttpStatus.FORBIDDEN
+      );
+    }
+    
+    // Don't allow admins to disable themselves
+    if (req.user.uid === userId) {
+      throw new HttpException(
+        { message: 'Administrators cannot disable their own accounts', code: 'auth/self-disable-denied' },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+    
+    try {
+      await this.authService.disableUser(userId);
+      return { success: true, message: 'User account disabled successfully' };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Failed to disable user account',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+  
+  @UseGuards(FirebaseAuthGuard)
+  @Post('enable-user/:userId')
+  async enableUser(@Param('userId') userId: string, @Request() req): Promise<any> {
+    // Only allow admins to enable users
+    if (req.user.role !== 'admin') {
+      throw new HttpException(
+        { message: 'Only administrators can enable user accounts', code: 'auth/permission-denied' },
+        HttpStatus.FORBIDDEN
+      );
+    }
+    
+    try {
+      await this.authService.enableUser(userId);
+      return { success: true, message: 'User account enabled successfully' };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Failed to enable user account',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }

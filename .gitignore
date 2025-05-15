@@ -1,49 +1,27 @@
-# Logs
-logs
+# Node / Dependencies
+node_modules/
+dist/
+build/
+coverage/
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Dependencies
-node_modules
-.pnp
-.pnp.js
-
-# Testing
-coverage
-*.lcov
-.nyc_output
-
-# Build
-dist
-dist-ssr
-*.local
-build
-src/assets/images
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Environment variables
 .env
-.env.*
-!.env.example
+.env.local
+.env.*.local
 
-# Misc
-*.pem
-.cache
-.vercel
-.netlify
-.turbo 
+# Vite
+.vite/
+# If you have a .env file in your frontend directory that's specific to Vite
+# and not already covered by the general .env rules, you might add:
+# frontend/.env
+# frontend/.env.local
+# frontend/.env.*.local
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
