@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: nana-pastry-backend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node --max-old-space-size=512 dist/main.js
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000

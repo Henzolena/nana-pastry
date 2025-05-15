@@ -31,8 +31,14 @@ async function bootstrap() {
     }),
   );
   
-  await app.listen(process.env.PORT ?? 3000);
+  // Get the port from environment variables with 10000 as fallback
+  // This is critical for Render deployment
+  const port = process.env.PORT || 10000;
   
-  console.log(`Application is running on: http://localhost:${process.env.PORT || 3000}`);
+  // Explicitly bind to 0.0.0.0 to handle requests properly on Render
+  await app.listen(port, '0.0.0.0');
+  
+  console.log(`Application is running on: http://0.0.0.0:${port}`);
 }
+
 bootstrap();
